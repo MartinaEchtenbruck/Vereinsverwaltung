@@ -1,11 +1,12 @@
 
 <?php
+$appRoot = dirname(__DIR__, 4);
 // load_contacts.php - Lädt Kontakte aus der MySQL-Datenbank
-require_once dirname(__DIR__, 4) . '/auth.php';
+require_once $appRoot . '/auth.php';
 checkPermission('view_contacts');
 
 header('Content-Type: application/json');
-require_once dirname(__DIR__, 4) . '/db_connection.php';
+require_once $appRoot . '/db_connection.php';
 
 try {
     $database = new Database();

@@ -1,7 +1,8 @@
 
 <?php
+$appRoot = dirname(__DIR__, 4);
 // add_contact.php - Fügt einen neuen Kontakt hinzu
-require_once dirname(__DIR__, 4) . '/auth.php';
+require_once $appRoot . '/auth.php';
 
 // Berechtigung prüfen
 if (!hasPermission('add_contacts') && !hasPermission('suggest_contacts')) {
@@ -10,7 +11,7 @@ if (!hasPermission('add_contacts') && !hasPermission('suggest_contacts')) {
 }
 
 header('Content-Type: application/json');
-require_once dirname(__DIR__, 4) . '/db_connection.php';
+require_once $appRoot . '/db_connection.php';
 
 $input = file_get_contents('php://input');
 $data = json_decode($input, true);

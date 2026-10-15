@@ -1,16 +1,15 @@
-# Modul: Sponsorenverwaltung
+# Modul Sponsoren
 
-**Zuständigkeit:** Kontaktübersicht und Pflege von Sponsoren-/Spendenkontakten.
+Das Modul bündelt die Kontaktverwaltung und das Erstellen individueller Anschreiben.
 
-## Bestehende öffentliche Einstiegspunkte
+## Actions
+- `Actions/load_contacts.php` – Kontakte laden
+- `Actions/add_contact.php` – Kontakt bzw. Vorschlag anlegen
+- `Actions/update_contact.php` – Kontaktdaten bzw. Kommentar bearbeiten
+- `Actions/delete_contact.php` – Kontakt löschen
+- `Actions/update_contact_status.php` – Kontaktstatus ändern
 
-Die PHP-Dateien bleiben in Phase 1 im Projektstamm, damit URLs, AJAX-Endpunkte und relative Formularpfade unverändert bleiben:
+## Pages
+- `Pages/contact.php` – individuelles Anschreiben für einen Kontakt erstellen und versenden
 
-- `index.php` – Kontaktübersicht
-- `load_contacts.php` – Kontakte laden
-- `add_contact.php`, `update_contact.php`, `delete_contact.php` – Kontaktänderungen
-- `update_contact_status.php` – Statusänderungen
-- `contact.php` – Einzelanschreiben
-- `bulk_mail_preview.php`, `send_bulk_mail.php` – Serienmail-Ablauf
-
-**Nächster Refactoring-Schritt:** fachliche Abläufe aus den öffentlichen Einstiegspunkten in Controller-/Service-Dateien dieses Moduls verlagern. Die bisherigen Dateien sollen dabei als kompatible Einstiegspunkte bestehen bleiben.
+Die bisherigen Dateien im Projektstamm bleiben als Kompatibilitätseinstiegspunkte bestehen. Dadurch ändern sich bestehende URLs und JavaScript-Aufrufe nicht. Die Seite `contact.php` greift für Datenbankverbindung, Navigation, Vorlagen, PDFs und Protokolldateien weiterhin auf das Anwendungsverzeichnis im Projektstamm zu.

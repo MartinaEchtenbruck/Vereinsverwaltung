@@ -1,10 +1,11 @@
 <?php
+$appRoot = dirname(__DIR__, 4);
 // delete_contact.php - Löscht einen einzelnen Kontakt
-require_once dirname(__DIR__, 4) . '/auth.php';
+require_once $appRoot . '/auth.php';
 checkPermission('delete_contacts');
 
 header('Content-Type: application/json');
-require_once dirname(__DIR__, 4) . '/db_connection.php';
+require_once $appRoot . '/db_connection.php';
 
 $input = file_get_contents('php://input');
 $data = json_decode($input, true);
