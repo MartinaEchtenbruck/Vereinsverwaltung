@@ -1,3 +1,5 @@
-# Modul Projekte
+# Modul: Projekte
 
-Reservierter Platz für die spätere Projektplanung. In Phase A werden hier keine produktiven Funktionen abgelegt. Bestehende Seitenpfade bleiben unverändert.
+Geplanter eigenständiger Funktionsbereich. Noch keine fachlichen Seiten oder Datenbankänderungen in Phase 1.
+
+Zugriff und Navigation werden später über die zentrale Navigation und serverseitige Berechtigungsprüfungen gesteuert.
