@@ -21,8 +21,8 @@ Die bestehende, produktiv genutzte PHP-Anwendung wird schrittweise in fachliche 
 │   │   ├── Auth.php                        Authentifizierung und Berechtigungen
 │   │   └── Mail.php                        Gemeinsamer Mailversand
 │   └── Modules/
-│       ├── Sponsoren/
-│       ├── Spendenaktionen/
+│       ├── Sponsoren/                    (Kontakt-Endpunkte aus Phase 2)
+│       ├── Spendenaktionen/              (Seiten und Aktionen aus Phase 3)
 │       ├── Benutzerverwaltung/
 │       ├── Projekte/
 │       └── Verkauf/
@@ -53,8 +53,11 @@ Die Dateien sind zugleich URLs, Formularziele und AJAX-Endpunkte. Ein sofortiges
 - Fachliche Modulgrenzen dokumentiert; vorhandene Endpunkte und UI-Dateien bleiben an ihren bisherigen Orten.
 - Datenbankschema und sichtbare Oberfläche nicht verändert.
 
-## Phase 2: Sponsoren-Endpunkte
 
-Die fünf Kontakt-Endpunkte wurden in `app/Modules/Sponsoren/Actions/` verlagert. Die Dateien im Projektstamm sind dünne Kompatibilitäts-Einstiegspunkte und behalten ihre bisherigen Namen und URLs. Bestehende JavaScript-Aufrufe müssen daher nicht angepasst werden. Die Implementierungen binden `auth.php` und `db_connection.php` über Pfade relativ zum Modulverzeichnis ein.
+## Phase 3 umgesetzt
 
-Bewusst noch nicht verschoben wurden die UI-Seiten `index.php` und `contact.php`; sie enthalten relative Links, Ressourcen und Formularlogik. Die Datenbankstruktur und fachliche Logik wurden in Phase 2 nicht absichtlich geändert.
+- Spendenaktionsseite, Bulk-Mail-Vorschau, Status-Reset und Bulk-Mail-Sendeaktion in `app/Modules/Spendenaktionen/` verlagert.
+- Öffentliche Dateien im Projektstamm bleiben als Kompatibilitäts-Einstiegspunkte bestehen; bestehende URLs und Fetch-Ziele bleiben stabil.
+- Moduldateien verwenden explizite Pfade zur Anwendungswurzel für Authentifizierung, Datenbankverbindung, Navigation, PDF-/Textvorlagen und Rate-Limit-Protokoll.
+- Datenbankschema, Berechtigungsnamen, HTML-Inhalte und Versandlogik wurden nicht fachlich geändert.
+- PHP-Syntaxprüfung durchgeführt; ein Laufzeittest gegen den konkreten Webserver und die Datenbank ist weiterhin erforderlich.

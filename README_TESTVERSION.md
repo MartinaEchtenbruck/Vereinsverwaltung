@@ -36,7 +36,6 @@ Die produktive Anwendung vor dem Austausch sichern. Keine Produktionsdateien üb
 Details: docs/ARCHITEKTUR.md
 
 
-## Refactoring Phase 2
-Die fünf Kontakt-Endpunkte sind jetzt im Verzeichnis `app/Modules/Sponsoren/Actions/` implementiert. Die gleichnamigen PHP-Dateien im Projektstamm bleiben als kompatible Einstiegspunkte bestehen. Die Datenbankverbindung (`db_connection.php`) ist weiterhin nicht im Paket enthalten und muss separat für die Testinstallation bereitgestellt werden.
+## Refactoring Phase 3
 
-Zusätzlich testen: Kontaktliste laden, Kontakt anlegen, Kontaktdaten bearbeiten, Kommentar ändern, Status ändern und Kontakt löschen. Für alle schreibenden Tests ausschließlich eine Testdatenbank verwenden.
+Die Spendenaktionsseiten und -aktionen sind unter `app/Modules/Spendenaktionen/` organisiert. Die bisherigen Root-Dateien bleiben als kompatible Einstiegspunkte erhalten. `db_connection.php` ist weiterhin installationsspezifisch und nicht Teil dieses ZIP-Pakets. Der Bulk-Mailversand kann echte E-Mails versenden; bitte nur mit Testkontakten prüfen.
