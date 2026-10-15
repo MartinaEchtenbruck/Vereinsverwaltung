@@ -1,27 +1,50 @@
-# Spendenverwaltung – Refactoring Phase 12
+# Spendenverwaltung – Finales Refactoring-Paket
 
-## Ziel
-Das Sponsorenmodul wurde abschließend überprüft und dokumentiert. Die fachlichen Implementierungen für die Übersicht, die Kontaktseite und die Kontaktaktionen befinden sich im Modulverzeichnis. Die bisherigen Dateien im Projektstamm bleiben als Kompatibilitätseinstiegspunkte bestehen.
+## Zweck
+Dieses Paket fasst den modularisierten Stand nach den Refactoring-Phasen 1–15 zusammen. Phase 16 ist die Abschluss- und Release-Vorbereitung: Die vorhandene Implementierung wurde nicht fachlich neu gestaltet; Dokumentation und Prüfinformationen wurden auf den Abschlussstand gebracht.
 
-## Ergebnis
-- `app/Modules/Sponsoren/Pages/index.php` enthält die Sponsorenübersicht.
-- `app/Modules/Sponsoren/Pages/contact.php` enthält die Seite zum Erstellen und Versenden individueller Anschreiben.
-- `app/Modules/Sponsoren/Actions/` enthält die Kontaktaktionen zum Laden, Anlegen, Bearbeiten, Löschen und Ändern des Status.
-- Die internen Moduldateien prüfen `APP_ENTRY_POINT`; die bisherigen URLs bleiben bestehen.
-- `app/Modules/Sponsoren/README.md` und `docs/ARCHITEKTUR.md` wurden an den tatsächlichen Stand angepasst.
+## Struktur
+- `app/Core/`: gemeinsame Authentifizierungs- und Mail-Funktionen
+- `app/Modules/Benutzerverwaltung/`: Seiten und Aktionen der Benutzerverwaltung
+- `app/Modules/Sponsoren/`: Sponsorenübersicht, Kontaktseite und Kontaktaktionen
+- `app/Modules/Spendenaktionen/`: Spendenaktionen und Bulk-Mail-Funktionen
+- `config/` und `includes/`: zentrale Navigationskonfiguration, Rendering und Styles
+- `js/`: bestehende JavaScript-Dateien
+- Dateien im Projektstamm: Kompatibilitätseinstiegspunkte für die bisherigen URLs
 
-## Installation
-1. Vorher die Testinstallation sichern.
-2. ZIP im Verzeichnis der Testinstallation entpacken und Dateien überschreiben lassen.
-3. Die installationsspezifische `db_connection.php` nicht überschreiben; sie ist nicht im ZIP enthalten.
-4. Keine bestehenden Dateien im Projektstamm löschen: Die Kompatibilitätseinstiegspunkte werden weiterhin benötigt.
+## Installation in der Testumgebung
+1. Erstelle eine Sicherung deiner aktuell funktionierenden Testinstallation.
+2. Entpacke das ZIP in das Verzeichnis der Testinstallation und lasse vorhandene Dateien überschreiben.
+3. Behalte deine installationsspezifische `db_connection.php` unverändert bei. Sie ist absichtlich nicht im Paket enthalten.
+4. Lösche keine bisherigen Einstiegspunkt-Dateien im Projektstamm.
+5. Öffne die Anwendung und führe die unten aufgeführten Funktionstests durch.
 
-## Tests
-Nach der Installation prüfen:
-1. Sponsorenübersicht öffnen und Kontakte laden.
-2. Kontakt testweise anlegen, bearbeiten, Status ändern und löschen (nur mit geeigneten Testdaten).
-3. Individuelles Anschreiben öffnen und den Ablauf bis vor dem tatsächlichen Versand kontrollieren; einen Versand nur mit einem geeigneten Testkontakt durchführen.
-4. Bestehende Navigation und Anmeldung prüfen.
-5. Direkten Aufruf einer internen Moduldatei testen; dieser soll mit HTTP 404 beendet werden.
+## Dashboard als Startseite
+Nach der Anmeldung landen alle Benutzer auf `dashboard.php`. Das Dashboard ist zunächst absichtlich leer und zeigt die globale Navigation. Die Sponsorenübersicht bleibt über `index.php` erreichbar. In der Navigation ist der Dashboard-Link für alle angemeldeten Benutzer sichtbar; weitere Bereiche erscheinen wie bisher nur mit der passenden Berechtigung.
 
-Alle PHP-Dateien wurden auf Syntax geprüft. Ein Laufzeittest mit dem konkreten Webserver und der Datenbank war hier nicht möglich. Datenbankschema, `db_connection.php`, bestehende Berechtigungsnamen und fachliche Abläufe wurden in dieser Phase nicht absichtlich verändert.
+## Empfohlene Funktionstests
+- Anmeldung führt zum Dashboard; Dashboard-Link ist auf Unterseiten verfügbar; Rückkehr zum Dashboard funktioniert
+- Anmeldung, Navigation, geschützte Seiten und Abmeldung
+- Benutzerverwaltung sowie Rollen und Berechtigungen
+- Registrierung, Benutzernamen-Prüfung und Passwort-Wiederherstellung
+- Sponsorenübersicht: Kontakte laden, anlegen, bearbeiten, Status ändern und löschen
+- Individuelle Anschreiben inklusive E-Mail-Versand
+- Bulk-Mail-Vorschau und Bulk-Mail-Versand
+- Spendenaktion einschließlich der vorhandenen Verwaltungsaktionen
+- CSS- und JavaScript-Ladevorgänge sowie Darstellung bei üblichen Fenstergrößen
+- Direkter Aufruf interner Moduldateien: diese sollen durch die `APP_ENTRY_POINT`-Prüfung nicht direkt ausgeliefert werden
+
+## Prüfstatus und Grenzen
+- Alle 43 PHP-Dateien wurden mit `php -l` auf Syntaxfehler geprüft.
+- Das vollständige `js/`-Verzeichnis und die Projektdokumentation sind enthalten.
+- `db_connection.php` und `.env`-Dateien sind nicht enthalten.
+- Die bisherigen Einstiegspunkte und fachlichen Funktionen wurden im Rahmen des Refactorings beibehalten.
+- Ein Live-Test der finalen ZIP-Datei auf dem konkreten Webserver wurde nicht von hier aus durchgeführt. Die Funktionstests müssen daher in der Testinstallation bestätigt werden, bevor dieses Paket produktiv eingesetzt wird.
+
+## Wichtiger Hinweis
+Dieses Paket ist ein Abschlussstand für die weitere Prüfung und Übernahme. Es ersetzt keine Sicherung und sollte erst nach erfolgreichem Test in die produktive Installation übernommen werden.
+
+
+## Header-Stabilisierung
+
+Die angemeldeten Seiten verwenden einen gemeinsamen Seitenkopf (`app-page-header`) mit festem Grid-Verhältnis für Überschrift und Navigation. Dadurch bleibt der rechte Navigationsbereich beim Wechsel zwischen Dashboard und Unterseiten stabil ausgerichtet. Auf schmalen Displays werden Überschrift und Navigation untereinander angeordnet.

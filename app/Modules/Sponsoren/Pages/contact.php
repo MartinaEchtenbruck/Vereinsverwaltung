@@ -13,24 +13,16 @@ require_once $appRoot . '/auth.php';
 require_once $appRoot . '/mail_utils.php';
 checkPermission('send_emails');
 
-error_reporting(E_ALL);
-ini_set('display_errors', 1);
-
-// Debug-Informationen
-file_put_contents($appRoot . '/contact_debug.log', "[" . date('Y-m-d H:i:s') . "] contact.php aufgerufen" . PHP_EOL, FILE_APPEND);
-
 // Datenbankverbindung einbinden
 require_once $appRoot . '/db_connection.php';
 
 // Sicherstellen, dass der PrimaryKey vorhanden ist
 if (!isset($_GET['primarykey']) || empty($_GET['primarykey'])) {
-    file_put_contents($appRoot . '/contact_debug.log', "Fehler: Kein primarykey Parameter" . PHP_EOL, FILE_APPEND);
     header('Location: index.php');
     exit;
 }
 
 $primaryKey = intval($_GET['primarykey']);
-file_put_contents($appRoot . '/contact_debug.log', "PrimaryKey: " . $primaryKey . PHP_EOL, FILE_APPEND);
 
 // Kontaktdaten aus Datenbank laden
 $currentContact = null;
@@ -49,16 +41,13 @@ try {
     $currentContact = $stmt->fetch(PDO::FETCH_ASSOC);
     
     if (!$currentContact) {
-        file_put_contents($appRoot . '/contact_debug.log', "Fehler: Kontakt nicht gefunden: " . $primaryKey . PHP_EOL, FILE_APPEND);
         header('Location: index.php');
         exit;
     }
     
-    file_put_contents($appRoot . '/contact_debug.log', "Kontakt geladen: " . $currentContact['name'] . PHP_EOL, FILE_APPEND);
     
 } catch (Exception $e) {
     error_log("Fehler beim Laden des Kontakts: " . $e->getMessage());
-    file_put_contents($appRoot . '/contact_debug.log', "Exception: " . $e->getMessage() . PHP_EOL, FILE_APPEND);
     header('Location: index.php');
     exit;
 }
@@ -80,7 +69,6 @@ try {
     if ($emailTemplate) {
         $betreff = $emailTemplate['betreff'] ?? $betreff;
         $text = $emailTemplate['mailtext'] ?? $text;
-        file_put_contents($appRoot . '/contact_debug.log', "Vorlage aus Datenbank geladen" . PHP_EOL, FILE_APPEND);
     } else {
         // Fallback: txt-Dateien
         if (file_exists($appRoot . '/Anschreiben-Betreff.txt')) {
@@ -89,12 +77,10 @@ try {
         if (file_exists($appRoot . '/Anschreiben-Text.txt')) {
             $text = trim(file_get_contents($appRoot . '/Anschreiben-Text.txt'));
         }
-        file_put_contents($appRoot . '/contact_debug.log', "Vorlage aus txt-Dateien geladen" . PHP_EOL, FILE_APPEND);
     }
     
 } catch (Exception $e) {
     error_log("Fehler beim Laden der E-Mail-Vorlage: " . $e->getMessage());
-    file_put_contents($appRoot . '/contact_debug.log', "Fehler Vorlage: " . $e->getMessage() . PHP_EOL, FILE_APPEND);
     
     // Fallback zu txt-Dateien
     if (file_exists($appRoot . '/Anschreiben-Betreff.txt')) {
@@ -173,16 +159,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     }
                     
                 } catch (Exception $e) {
-                    $error = 'Datenbankfehler: ' . $e->getMessage();
+                    $error = 'Der Kontakt konnte nicht aktualisiert werden. Bitte versuchen Sie es erneut.';
                     error_log("Fehler beim Aktualisieren des Kontakts: " . $e->getMessage());
-                    file_put_contents($appRoot . '/contact_debug.log', "DB Update Fehler: " . $e->getMessage() . PHP_EOL, FILE_APPEND);
                 }
             } else {
                 $error = 'Fehler beim Senden der E-Mail';
             }
         } catch (Exception $e) {
-            $error = 'Fehler: ' . $e->getMessage();
-            file_put_contents($appRoot . '/contact_debug.log', "Allgemeiner Fehler: " . $e->getMessage() . PHP_EOL, FILE_APPEND);
+            $error = 'Beim Verarbeiten der Anfrage ist ein Fehler aufgetreten. Bitte versuchen Sie es erneut.';
+            error_log("Fehler beim Verarbeiten des Anschreibens: " . $e->getMessage());
         }
     }
 }
@@ -190,68 +175,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 // E-Mail-Text mit korrekter Formatierung vorbereiten
 $mailBody = "Sehr geehrte Damen und Herren, " . ($currentContact['anrede'] ?? '') . ",\n\n" . $text;
 
-/**
- * Sendet eine E-Mail mit Anhängen
- 
-function sendEmailWithAttachments($to, $subject, $message, $attachments = []) {
-    $from = "foerderverein@evkigarumeln.de";
-    $bcc = "foerderverein@evkigarumeln.de";
-    
-    // Boundary für MIME-Trennung
-    $boundary = md5(time());
-    
-    // Header
-    $headers = "From: $from\r\n";
-    $headers .= "Reply-To: $from\r\n";
-    $headers .= "Bcc: $bcc\r\n";
-    $headers .= "MIME-Version: 1.0\r\n";
-    $headers .= "Content-Type: multipart/mixed; boundary=\"$boundary\"\r\n";
-    
-    // Nachrichtentext
-    $body = "--$boundary\r\n";
-    $body .= "Content-Type: text/plain; charset=utf-8\r\n";
-    $body .= "Content-Transfer-Encoding: 8bit\r\n\r\n";
-    $body .= $message . "\r\n";
-    
-    // Anhänge hinzufügen
-    foreach ($attachments as $attachment) {
-        if (file_exists($attachment)) {
-            $file_size = filesize($attachment);
-            $file_content = file_get_contents($attachment);
-            $file_encoded = chunk_split(base64_encode($file_content));
-            
-            $body .= "--$boundary\r\n";
-            $body .= "Content-Type: application/pdf; name=\"$attachment\"\r\n";
-            $body .= "Content-Transfer-Encoding: base64\r\n";
-            $body .= "Content-Disposition: attachment; filename=\"$attachment\"\r\n\r\n";
-            $body .= $file_encoded . "\r\n";
-        }
-    }
-    
-    // Abschluss der Nachricht
-    $body .= "--$boundary--";
-    
-    // ECHTEN E-Mail-Versand aktivieren
-    $mail_result = mail($to, $subject, $body, $headers);
-    
-    // Debug-Informationen loggen
-    $debug_info = [
-        "Zeit: " . date('Y-m-d H:i:s'),
-        "An: $to",
-        "Von: $from", 
-        "BCC: $bcc",
-        "Betreff: $subject",
-        "Anzahl Anhänge: " . count($attachments),
-        "Anhänge: " . implode(", ", $attachments),
-        "Mail-Funktion Ergebnis: " . ($mail_result ? 'ERFOLG' : 'FEHLER'),
-        "Letzter Fehler: " . print_r(error_get_last(), true)
-    ];
-    
-    file_put_contents('email_debug.log', implode("\n", $debug_info) . "\n\n", FILE_APPEND);
-    file_put_contents($appRoot . '/contact_debug.log', "E-Mail versendet: " . ($mail_result ? 'ERFOLG' : 'FEHLER') . PHP_EOL, FILE_APPEND);
-    
-    return $mail_result;
-} */
+
 ?>
 
 <!DOCTYPE html>
@@ -476,9 +400,10 @@ function sendEmailWithAttachments($to, $subject, $message, $attachments = []) {
 </head>
 <body>
     <div class="container">
-        <?php require $appRoot . '/includes/navigation.php'; ?>
-        
-        <h1>Anschreiben erstellen</h1>
+        <header class="app-page-header">
+            <h1>Anschreiben erstellen</h1>
+            <?php require $appRoot . '/includes/navigation.php'; ?>
+        </header>
         
         <?php if ($success): ?>
             <div class="notification success">
@@ -505,9 +430,6 @@ function sendEmailWithAttachments($to, $subject, $message, $attachments = []) {
             <div class="notification error">
                 <i class="fas fa-exclamation-circle"></i> <?php echo htmlspecialchars($error); ?>
                 
-                <div class="debug-info">
-                    <strong>Fehlerdetails:</strong> Bitte überprüfen Sie die Datei <strong>contact_debug.log</strong> und <strong>email_debug.log</strong> im selben Verzeichnis.
-                </div>
             </div>
         <?php endif; ?>
         

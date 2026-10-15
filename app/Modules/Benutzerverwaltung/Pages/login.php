@@ -8,14 +8,13 @@ if (!defined('APP_ENTRY_POINT')) {
     exit;
 }
 
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
-}
-require_once dirname(__DIR__, 4) . '/db_connection.php';
+$appRoot = dirname(__DIR__, 4);
+require_once $appRoot . '/auth.php';
+require_once $appRoot . '/db_connection.php';
 
 // Wenn bereits eingeloggt, weiterleiten
 if (isset($_SESSION['user_id'])) {
-    header('Location: index.php');
+    header('Location: dashboard.php');
     exit;
 }
 
@@ -56,20 +55,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $updateStmt = $conn->prepare("UPDATE users SET last_login = NOW() WHERE id = ?");
                 $updateStmt->execute([$user['id']]);
                 
-                // Benutzerberechtigungen in Session speichern
-                $permStmt = $conn->prepare("
-                    SELECT p.permission_name 
-                    FROM users u
-                    JOIN user_roles ur ON u.id = ur.user_id
-                    JOIN role_permissions rp ON ur.role_id = rp.role_id
-                    JOIN permissions p ON rp.permission_id = p.id
-                    WHERE u.id = ?
-                ");
-                $permStmt->execute([$user['id']]);
-                $_SESSION['permissions'] = $permStmt->fetchAll(PDO::FETCH_COLUMN);
-                
+                // Gemeinsame Berechtigungsabfrage auch beim späteren Neuladen verwenden.
+                $_SESSION['permissions'] = loadUserPermissions($conn, $user['id']);
+
                 // Weiterleitung zur Hauptseite
-                header('Location: index.php');
+                header('Location: dashboard.php');
                 exit;
                 
             } else {

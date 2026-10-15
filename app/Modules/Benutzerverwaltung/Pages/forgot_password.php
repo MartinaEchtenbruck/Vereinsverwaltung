@@ -5,9 +5,10 @@ if (!defined('APP_ENTRY_POINT')) {
     exit;
 }
 
+$appRoot = dirname(__DIR__, 4);
 // forgot_password.php - Passwort vergessen Prozess starten
 session_start();
-require_once dirname(__DIR__, 4) . '/db_connection.php';
+require_once $appRoot . '/db_connection.php';
 
 $message = '';
 $error = '';

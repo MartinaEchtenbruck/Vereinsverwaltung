@@ -5,12 +5,13 @@ if (!defined('APP_ENTRY_POINT')) {
     exit;
 }
 
+$appRoot = dirname(__DIR__, 4);
 session_start();
-require_once dirname(__DIR__, 4) . '/db_connection.php';
+require_once $appRoot . '/db_connection.php';
 
 // Wenn bereits eingeloggt, weiterleiten
 if (isset($_SESSION['user_id'])) {
-    header('Location: index.php');
+    header('Location: dashboard.php');
     exit;
 }
 

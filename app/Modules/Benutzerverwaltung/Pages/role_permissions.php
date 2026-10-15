@@ -5,6 +5,7 @@ if (!defined('APP_ENTRY_POINT')) {
     exit;
 }
 
+$appRoot = dirname(__DIR__, 4);
 // role_permissions.php - Rollen und Berechtigungen verwalten
 
 // Session nur starten wenn nicht bereits gestartet
@@ -12,8 +13,8 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-require_once dirname(__DIR__, 4) . '/db_connection.php';
-require_once dirname(__DIR__, 4) . '/auth.php';
+require_once $appRoot . '/db_connection.php';
+require_once $appRoot . '/auth.php';
 
 checkPermission('manage_users');
 
@@ -211,10 +212,10 @@ try {
 </head>
 <body>
     <div class="container">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <header class="app-page-header">
             <h1><i class="fas fa-user-shield"></i> Rollen & Berechtigungen</h1>
-            <?php require dirname(__DIR__, 4) . '/includes/navigation.php'; ?>
-        </div>
+            <?php require $appRoot . '/includes/navigation.php'; ?>
+        </header>
         
         <?php if ($message): ?>
             <div class="notification success">

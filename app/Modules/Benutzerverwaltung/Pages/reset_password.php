@@ -5,9 +5,10 @@ if (!defined('APP_ENTRY_POINT')) {
     exit;
 }
 
+$appRoot = dirname(__DIR__, 4);
 // reset_password.php - Passwort zurücksetzen mit Token
 session_start();
-require_once dirname(__DIR__, 4) . '/db_connection.php';
+require_once $appRoot . '/db_connection.php';
 
 $error = '';
 $success = '';

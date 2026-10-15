@@ -77,13 +77,11 @@ checkPermission('view_contacts');
 </head>
 <body>
     <div class="container">
-        <!-- Header mit Benutzerinfo und Add-Button -->
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <!-- Einheitlicher Seitenkopf -->
+        <header class="app-page-header">
             <h1>Spendenkontakte Verwaltung</h1>
-            <div style="display: flex; align-items: center; gap: 15px;">                
-                <?php require $appRoot . '/includes/navigation.php'; ?>
-            </div>
-        </div>
+            <?php require $appRoot . '/includes/navigation.php'; ?>
+        </header>
         
         <div class="search-filter-container">
             <div class="search-container">

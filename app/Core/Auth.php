@@ -43,24 +43,34 @@ function hasPermission($permission_name) {
     return isset($_SESSION['permissions']) && in_array($permission_name, $_SESSION['permissions'], true);
 }
 
-function reloadUserPermissions() {
-    require_once dirname(__DIR__, 2) . '/db_connection.php';
-    $database = new Database();
-    $conn = $database->getConnection();
-    
+/**
+ * Lädt die Berechtigungen eines Benutzers über eine bereits bestehende DB-Verbindung.
+ * Die Abfrage wird sowohl beim Login als auch beim späteren Neuladen der Session-Rechte verwendet.
+ *
+ * @param PDO $conn Bestehende Datenbankverbindung
+ * @param int|string $userId Benutzer-ID
+ * @return array Berechtigungsnamen
+ */
+function loadUserPermissions(PDO $conn, $userId) {
     $stmt = $conn->prepare("
-        SELECT p.permission_name 
+        SELECT p.permission_name
         FROM users u
         JOIN user_roles ur ON u.id = ur.user_id
         JOIN role_permissions rp ON ur.role_id = rp.role_id
         JOIN permissions p ON rp.permission_id = p.id
         WHERE u.id = ? AND u.is_active = TRUE
     ");
-    $stmt->execute([$_SESSION['user_id']]);
-    $permissions = $stmt->fetchAll(PDO::FETCH_COLUMN, 0);
-    
-    $_SESSION['permissions'] = $permissions;
-    
+    $stmt->execute([$userId]);
+
+    return $stmt->fetchAll(PDO::FETCH_COLUMN, 0);
+}
+
+function reloadUserPermissions() {
+    require_once dirname(__DIR__, 2) . '/db_connection.php';
+    $database = new Database();
+    $conn = $database->getConnection();
+
+    $_SESSION['permissions'] = loadUserPermissions($conn, $_SESSION['user_id']);
 }
 
 function getUserRole() {

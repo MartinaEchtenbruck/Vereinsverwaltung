@@ -5,9 +5,10 @@ if (!defined('APP_ENTRY_POINT')) {
     exit;
 }
 
+$appRoot = dirname(__DIR__, 4);
 // check_username.php
 session_start();
-require_once dirname(__DIR__, 4) . '/db_connection.php';
+require_once $appRoot . '/db_connection.php';
 
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
@@ -20,7 +21,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     parse_str($input, $data);
     $username = trim($data['username'] ?? '');
     
-    error_log("Username check requested: " . $username);
     
     if (empty($username)) {
         echo json_encode(['available' => false, 'error' => 'Username empty']);
@@ -43,7 +43,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         
     } catch (Exception $e) {
         error_log("Username check error: " . $e->getMessage());
-        echo json_encode(['available' => false, 'error' => 'Database error: ' . $e->getMessage()]);
+        echo json_encode(['available' => false, 'error' => 'Die Prüfung ist derzeit nicht möglich.']);
     }
 } else {
     echo json_encode(['available' => false, 'error' => 'Invalid request method']);

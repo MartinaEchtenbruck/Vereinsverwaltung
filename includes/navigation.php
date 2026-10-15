@@ -17,7 +17,7 @@ $currentUserRole = getUserRole();
     </div>
     <nav class="app-navigation-links" aria-label="Bereiche">
         <?php foreach ($navigationItems as $item): ?>
-            <?php if (hasPermission($item['permission'])): ?>
+            <?php if (!isset($item['permission']) || $item['permission'] === null || hasPermission($item['permission'])): ?>
                 <?php $isCurrentPage = $currentPage === basename($item['url']); ?>
                 <a href="<?= htmlspecialchars($item['url'], ENT_QUOTES, 'UTF-8') ?>"<?= $isCurrentPage ? ' class="is-active" aria-current="page"' : '' ?>>
                     <i class="<?= htmlspecialchars($item['icon'], ENT_QUOTES, 'UTF-8') ?>" aria-hidden="true"></i>

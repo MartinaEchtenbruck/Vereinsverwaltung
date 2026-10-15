@@ -48,3 +48,31 @@
         margin-left: 0;
     }
 }
+
+
+/* Gemeinsamer Seitenkopf: hält Titel und Navigation auf allen Seiten stabil ausgerichtet. */
+.app-page-header {
+    display: grid;
+    grid-template-columns: minmax(220px, 1fr) minmax(0, 2fr);
+    align-items: start;
+    gap: 24px;
+    margin-bottom: 24px;
+}
+.app-page-header > h1 {
+    min-width: 0;
+    margin-top: 0;
+    margin-bottom: 0;
+}
+.app-page-header > .app-navigation {
+    width: 100%;
+    min-width: 0;
+}
+@media (max-width: 900px) {
+    .app-page-header {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 12px;
+    }
+    .app-page-header > .app-navigation {
+        margin-top: 0;
+    }
+}

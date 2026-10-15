@@ -233,10 +233,10 @@ $mailBody = "Sehr geehrte Damen und Herren, <Anrede>,\n\n" . $text;
 <body>
     <div class="container">
         <!-- Header -->
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <header class="app-page-header">
             <h1><i class="fas fa-paper-plane"></i> Bulk-Mailversand vorbereiten</h1>
             <?php require $appRoot . '/includes/navigation.php'; ?>
-        </div>
+        </header>
 
         <!-- Info -->
         <div class="info-box">

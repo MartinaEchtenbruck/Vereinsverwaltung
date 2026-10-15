@@ -330,10 +330,10 @@ $bulkAborted = isset($_GET['bulk_aborted']) && $_GET['bulk_aborted'] === '1';
             </div>
         <?php endif; ?>
         <!-- Header -->
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <header class="app-page-header">
             <h1><i class="fas fa-hand-holding-heart"></i> Spendenaktion verwalten</h1>
             <?php require $appRoot . '/includes/navigation.php'; ?>
-        </div>
+        </header>
 
         <!-- Aktuelle Aktion -->
         <div class="fundraising-card">

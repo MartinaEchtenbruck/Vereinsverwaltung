@@ -40,19 +40,10 @@ function sendEmailWithAttachments($to, $subject, $message, $attachments = []) {
 
     $mail_result = mail($to, $subject, $body, $headers);
 
-    $debug_info = [
-        "Zeit: " . date('Y-m-d H:i:s'),
-        "An: $to",
-        "Von: $from",
-        //"BBC: $bcc",
-        "Betreff: $subject",
-        "Anzahl Anhänge: " . count($attachments),
-        "Anhänge: " . implode(", ", $attachments),
-        "Mail-Funktion Ergebnis: " . ($mail_result ? 'ERFOLG' : 'FEHLER'),
-        "Letzter Fehler: " . print_r(error_get_last(), true)
-    ];
+    if (!$mail_result) {
+        error_log('E-Mail-Versand fehlgeschlagen.');
+    }
 
-    file_put_contents('email_debug.log', implode("\n", $debug_info) . "\n\n", FILE_APPEND);
 
     return $mail_result;
 }

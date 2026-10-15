@@ -7,6 +7,13 @@
  */
 return [
     [
+        'label' => 'Dashboard',
+        'url' => 'dashboard.php',
+        'icon' => 'fas fa-gauge-high',
+        // Für alle angemeldeten Benutzer sichtbar.
+        'permission' => null,
+    ],
+    [
         'label' => 'Sponsorenübersicht',
         'url' => 'index.php',
         'icon' => 'fas fa-address-book',
