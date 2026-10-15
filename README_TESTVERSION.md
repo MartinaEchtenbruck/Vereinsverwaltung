@@ -34,3 +34,9 @@ Sicherheit
 Die produktive Anwendung vor dem Austausch sichern. Keine Produktionsdateien überschreiben, solange die Testversion nicht ausreichend geprüft wurde. Zugangsdaten nicht in ZIP-Dateien oder Versionsverwaltung aufnehmen.
 
 Details: docs/ARCHITEKTUR.md
+
+
+## Refactoring Phase 2
+Die fünf Kontakt-Endpunkte sind jetzt im Verzeichnis `app/Modules/Sponsoren/Actions/` implementiert. Die gleichnamigen PHP-Dateien im Projektstamm bleiben als kompatible Einstiegspunkte bestehen. Die Datenbankverbindung (`db_connection.php`) ist weiterhin nicht im Paket enthalten und muss separat für die Testinstallation bereitgestellt werden.
+
+Zusätzlich testen: Kontaktliste laden, Kontakt anlegen, Kontaktdaten bearbeiten, Kommentar ändern, Status ändern und Kontakt löschen. Für alle schreibenden Tests ausschließlich eine Testdatenbank verwenden.
