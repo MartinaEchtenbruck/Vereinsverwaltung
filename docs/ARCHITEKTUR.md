@@ -26,3 +26,7 @@ Die Dateien im Projektstamm bleiben als Einstiegspunkte bestehen, damit vorhande
 
 ## Schutz interner Moduldateien (Phase 11)
 Interne PHP-Dateien unter `app/Modules/` prüfen `APP_ENTRY_POINT` und beenden einen direkten HTTP-Aufruf mit Status 404. Die bisherigen Dateien im Projektstamm setzen dieses Flag und binden die Implementierung ein. Damit bleiben bestehende URLs erhalten, während Moduldateien nicht direkt über ihre internen Pfade aufgerufen werden sollen.
+
+
+## Sponsorenmodul – Bestandsprüfung (Phase 12)
+Die Übersicht, die Kontaktseite und die fünf zugehörigen Kontaktaktionen liegen in `app/Modules/Sponsoren/Pages/` beziehungsweise `app/Modules/Sponsoren/Actions/`. Die gleichnamigen Dateien im Projektstamm sind Kompatibilitätseinstiegspunkte für bestehende URLs und JavaScript-Aufrufe. Es sind keine weiteren Sponsoren-Implementierungen im Projektstamm vorgesehen; bei künftigen Änderungen soll neue fachliche Logik direkt im Modul ergänzt werden.
