@@ -1,4 +1,10 @@
 <?php
+/** Interne Moduldatei: nur über den bisherigen Einstiegspunkt aufrufen. */
+if (!defined('APP_ENTRY_POINT')) {
+    http_response_code(404);
+    exit;
+}
+
 // users.php - Benutzerverwaltung für Administratoren
 
 // Session nur starten wenn nicht bereits gestartet

@@ -1,4 +1,10 @@
 <?php
+/** Interne Moduldatei: nur über den bisherigen Einstiegspunkt aufrufen. */
+if (!defined('APP_ENTRY_POINT')) {
+    http_response_code(404);
+    exit;
+}
+
 // role_permissions.php - Rollen und Berechtigungen verwalten
 
 // Session nur starten wenn nicht bereits gestartet

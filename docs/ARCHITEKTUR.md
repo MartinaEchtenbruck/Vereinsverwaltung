@@ -22,3 +22,7 @@
 
 ## Kompatibilität und Installation
 Die Dateien im Projektstamm bleiben als Einstiegspunkte bestehen, damit vorhandene URLs, Formularziele und AJAX-Aufrufe nicht geändert werden müssen. Die Sitzungsinitialisierung erfolgt nur bei Bedarf; nach erfolgreicher Anmeldung wird die Session-ID erneuert. Debug-Ausgaben, die Benutzernamen und Berechtigungen protokollieren, wurden aus dem Authentifizierungskern entfernt. Die bisherigen `index.php` und `login.php` binden die Sponsorenübersicht beziehungsweise Anmeldeseite aus ihren Modulverzeichnissen ein; beide Implementierungen sind gegen direkten Aufruf geschützt. `db_connection.php` ist installationsspezifisch und wird nicht mit dem Refactoring-Paket ausgeliefert. Datenbankschema, bestehende Berechtigungsnamen und fachliche Abläufe sollen unverändert bleiben.
+
+
+## Schutz interner Moduldateien (Phase 11)
+Interne PHP-Dateien unter `app/Modules/` prüfen `APP_ENTRY_POINT` und beenden einen direkten HTTP-Aufruf mit Status 404. Die bisherigen Dateien im Projektstamm setzen dieses Flag und binden die Implementierung ein. Damit bleiben bestehende URLs erhalten, während Moduldateien nicht direkt über ihre internen Pfade aufgerufen werden sollen.

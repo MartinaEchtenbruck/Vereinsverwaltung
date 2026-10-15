@@ -1,4 +1,10 @@
 <?php
+/** Interne Moduldatei: nur über den bisherigen Einstiegspunkt aufrufen. */
+if (!defined('APP_ENTRY_POINT')) {
+    http_response_code(404);
+    exit;
+}
+
 // contact.php - Anschreiben erstellen
 $appRoot = dirname(__DIR__, 4);
 // Keep legacy relative file operations anchored at the application root.

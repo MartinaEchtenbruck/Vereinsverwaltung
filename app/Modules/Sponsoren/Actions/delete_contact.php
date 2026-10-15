@@ -1,4 +1,10 @@
 <?php
+/** Interne Moduldatei: nur über den bisherigen Einstiegspunkt aufrufen. */
+if (!defined('APP_ENTRY_POINT')) {
+    http_response_code(404);
+    exit;
+}
+
 $appRoot = dirname(__DIR__, 4);
 // delete_contact.php - Löscht einen einzelnen Kontakt
 require_once $appRoot . '/auth.php';

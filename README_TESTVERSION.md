@@ -38,3 +38,7 @@ Die Implementierung der Anmeldung liegt jetzt unter `app/Modules/Benutzerverwalt
 - Debug-Protokollierung von Benutzernamen und Berechtigungen wurde entfernt.
 - Der bestehende Einstiegspunkt `logout.php` verwendet einen stabilen Dateipfad; URL und Abmeldeablauf bleiben erhalten.
 - Datenbankschema und `db_connection.php` bleiben unverändert.
+
+
+## Phase 11 – Schutz interner Moduldateien
+Die internen PHP-Dateien unter `app/Modules/` sind gegen direkten HTTP-Aufruf geschützt. Die bisherigen Einstiegspunkte im Projektstamm bleiben erhalten und setzen vor dem Einbinden das Flag `APP_ENTRY_POINT`. Bitte teste insbesondere Anmeldung, Registrierung, Passwort-Wiederherstellung, Benutzerverwaltung, Sponsorenverwaltung und Spendenaktionen.

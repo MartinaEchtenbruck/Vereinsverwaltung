@@ -1,4 +1,10 @@
 <?php
+/** Interne Moduldatei: nur über den bisherigen Einstiegspunkt aufrufen. */
+if (!defined('APP_ENTRY_POINT')) {
+    http_response_code(404);
+    exit;
+}
+
 session_start();
 require_once dirname(__DIR__, 4) . '/db_connection.php';
 

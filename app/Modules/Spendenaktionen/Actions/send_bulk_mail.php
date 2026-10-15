@@ -1,4 +1,10 @@
 <?php
+/** Interne Moduldatei: nur über den bisherigen Einstiegspunkt aufrufen. */
+if (!defined('APP_ENTRY_POINT')) {
+    http_response_code(404);
+    exit;
+}
+
 $appRoot = dirname(__DIR__, 4);
 // send_bulk_mail.php - Versendet EINE Mail im Rahmen des Bulk-Versands
 require_once $appRoot . '/auth.php';

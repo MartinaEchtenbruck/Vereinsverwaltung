@@ -1,4 +1,10 @@
 <?php
+/** Interne Moduldatei: nur über den bisherigen Einstiegspunkt aufrufen. */
+if (!defined('APP_ENTRY_POINT')) {
+    http_response_code(404);
+    exit;
+}
+
 $appRoot = dirname(__DIR__, 4);
 // update_contact_status.php - Aktualisiert nur den Status eines Kontakts
 require_once $appRoot . '/auth.php';
