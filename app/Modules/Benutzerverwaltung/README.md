@@ -1,12 +1,13 @@
-# Modul: Benutzerverwaltung und Berechtigungen
+# Modul Benutzerverwaltung
 
-**Zuständigkeit:** Benutzerkonten, Registrierung, Passwort-Wiederherstellung und Rollen-/Rechteverwaltung.
+Dieses Modul bündelt die Seiten und Aktionen für Benutzerkonten, Registrierung, Passwort-Wiederherstellung sowie Rollen und Berechtigungen.
 
-- `users.php`
-- `register.php`
-- `forgot_password.php`
-- `reset_password.php`
-- `role_permissions.php`
-- `check_username.php`
+## Struktur
+- `Pages/users.php`: Benutzerkonten verwalten
+- `Pages/role_permissions.php`: Rollen und Berechtigungen verwalten
+- `Pages/register.php`: Registrierung
+- `Pages/forgot_password.php`: Passwort-Reset anfordern
+- `Pages/reset_password.php`: Passwort mit Token zurücksetzen
+- `Actions/check_username.php`: AJAX-Prüfung auf verfügbaren Benutzernamen
 
-Die zentralen Authentifizierungs- und Berechtigungsfunktionen liegen bereits unter `app/Core/Auth.php`. Die Root-Datei `auth.php` bleibt als Kompatibilitäts-Einstiegspunkt erhalten.
+Die Dateien im Projektstamm bleiben als kompatible Einstiegspunkte bestehen, damit bestehende URLs, Formulare und AJAX-Aufrufe unverändert bleiben. Die Implementierungen greifen mit expliziten Pfaden auf die im Projektstamm liegende `db_connection.php`, `auth.php` und gemeinsame Includes zu. Datenbankschema und Berechtigungsregeln wurden in dieser Phase nicht geändert.
