@@ -1,13 +1,12 @@
-# Spendenverwaltung – Refactoring Phase 7
+# Spendenverwaltung – Refactoring Phase 8
 
 ## Ziel
-Die bisherige Startseite `index.php` wurde in das Modul Sponsoren überführt. Die öffentliche URL `/index.php` bleibt unverändert und dient weiterhin als Einstiegspunkt. Das Datenbankschema, die Berechtigungsnamen und die fachliche Logik wurden nicht geändert.
+Die zentrale Navigation wurde konsistent ergänzt: Der aktuell geöffnete Bereich wird visuell markiert und für assistive Technologien mit `aria-current="page"` ausgezeichnet. Die bestehenden URLs, Berechtigungsprüfungen und fachlichen Abläufe bleiben unverändert.
 
 ## Änderungen
-- Die eigentliche Implementierung der Sponsorenübersicht liegt jetzt unter `app/Modules/Sponsoren/Pages/index.php`.
-- Die `index.php` im Projektstamm ist ein schlanker Kompatibilitätseinstiegspunkt.
-- Die Modulimplementierung wird gegen direkten Aufruf über ihren Dateipfad geschützt, damit die Seite weiterhin über die gewohnte URL und damit mit den bisherigen relativen Asset- und JavaScript-Pfaden läuft.
-- Die Navigation wird weiterhin aus `includes/navigation.php` und `config/navigation.php` geladen; ihre sichtbare Gestaltung wurde in dieser Phase bewusst nicht verändert.
+- `includes/navigation.php` erkennt den aktuell geöffneten Einstiegspunkt und kennzeichnet den passenden Navigationslink mit `is-active` und `aria-current="page"`.
+- `includes/navigation.css` hebt den aktiven Bereich dezent hervor.
+- Die Navigationsziele und Berechtigungsnamen in `config/navigation.php` wurden nicht verändert.
 - `docs/ARCHITEKTUR.md` wurde aktualisiert.
 
 ## Installation
@@ -18,10 +17,24 @@ Die bisherige Startseite `index.php` wurde in das Modul Sponsoren überführt. D
 
 ## Tests
 Nach der Installation prüfen:
-1. `index.php` öffnet die Sponsorenübersicht.
-2. Die Kontaktliste wird geladen.
-3. Suche, Filter und Kontaktformular funktionieren.
-4. Bearbeiten/Statusänderung und der Link zum Erstellen eines Anschreibens funktionieren.
-5. Navigation und Berechtigungen verhalten sich wie zuvor.
+1. `index.php`, `edit_fundraising.php`, `users.php` und `role_permissions.php` öffnen die jeweiligen Bereiche.
+2. Der jeweils aktuelle Bereich wird in der Navigation hervorgehoben.
+3. Links werden weiterhin nur entsprechend den vorhandenen Berechtigungen angezeigt.
+4. Navigation auf Desktop und schmalen Bildschirmen prüfen.
+5. Abmelden funktioniert weiterhin.
 
 Alle PHP-Dateien wurden auf Syntax geprüft. Ein Laufzeittest mit dem konkreten Webserver und der Datenbank war hier nicht möglich. Schreibende Aktionen daher weiterhin zunächst nur mit geeigneten Testkontakten testen.
+
+
+## Phase 9 – Anmeldeseite ins Benutzerverwaltungsmodul verschoben
+
+Die Implementierung der Anmeldung liegt jetzt unter `app/Modules/Benutzerverwaltung/Pages/login.php`. Die bisherige Datei `login.php` bleibt als kompatibler Einstiegspunkt erhalten. Die Datenbankverbindung wird weiterhin aus der installationsspezifischen `db_connection.php` im Projektstamm geladen.
+
+
+## Phase 10 – Authentifizierungs- und Sitzungsabläufe
+
+- Sitzungen werden im Authentifizierungskern nur gestartet, wenn noch keine Sitzung aktiv ist.
+- Nach erfolgreicher Anmeldung wird die Session-ID erneuert.
+- Debug-Protokollierung von Benutzernamen und Berechtigungen wurde entfernt.
+- Der bestehende Einstiegspunkt `logout.php` verwendet einen stabilen Dateipfad; URL und Abmeldeablauf bleiben erhalten.
+- Datenbankschema und `db_connection.php` bleiben unverändert.

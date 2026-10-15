@@ -4,6 +4,7 @@
  * Voraussetzung: auth.php wurde bereits eingebunden und die Session läuft.
  */
 $navigationItems = require __DIR__ . '/../config/navigation.php';
+$currentPage = basename(parse_url($_SERVER['SCRIPT_NAME'] ?? '', PHP_URL_PATH) ?: '');
 $currentUserName = $_SESSION['full_name'] ?? $_SESSION['username'] ?? 'Benutzer';
 $currentUserRole = getUserRole();
 ?>
@@ -17,7 +18,8 @@ $currentUserRole = getUserRole();
     <nav class="app-navigation-links" aria-label="Bereiche">
         <?php foreach ($navigationItems as $item): ?>
             <?php if (hasPermission($item['permission'])): ?>
-                <a href="<?= htmlspecialchars($item['url'], ENT_QUOTES, 'UTF-8') ?>">
+                <?php $isCurrentPage = $currentPage === basename($item['url']); ?>
+                <a href="<?= htmlspecialchars($item['url'], ENT_QUOTES, 'UTF-8') ?>"<?= $isCurrentPage ? ' class="is-active" aria-current="page"' : '' ?>>
                     <i class="<?= htmlspecialchars($item['icon'], ENT_QUOTES, 'UTF-8') ?>" aria-hidden="true"></i>
                     <?= htmlspecialchars($item['label'], ENT_QUOTES, 'UTF-8') ?>
                 </a>

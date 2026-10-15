@@ -27,6 +27,11 @@
 .app-navigation-links a:focus-visible {
     text-decoration: underline;
 }
+.app-navigation-links a.is-active {
+    font-weight: 700;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}
 .app-navigation-links .app-navigation-logout {
     color: var(--danger-color);
 }

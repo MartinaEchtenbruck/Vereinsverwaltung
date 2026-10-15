@@ -1,6 +1,9 @@
 
 <?php
-session_start();
+// Eine Sitzung nur starten, wenn noch keine aktiv ist.
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
 
 function checkPermission($permission_name) {
     if (!isset($_SESSION['user_id'])) {
@@ -13,7 +16,7 @@ function checkPermission($permission_name) {
         reloadUserPermissions();
     }
     
-    if (!in_array($permission_name, $_SESSION['permissions'])) {
+    if (!in_array($permission_name, $_SESSION['permissions'], true)) {
         http_response_code(403);
         // Für API-Aufrufe JSON zurückgeben
         if (strpos($_SERVER['REQUEST_URI'], '.php') !== false && 
@@ -37,7 +40,7 @@ function hasPermission($permission_name) {
         reloadUserPermissions();
     }
     
-    return isset($_SESSION['permissions']) && in_array($permission_name, $_SESSION['permissions']);
+    return isset($_SESSION['permissions']) && in_array($permission_name, $_SESSION['permissions'], true);
 }
 
 function reloadUserPermissions() {
@@ -58,8 +61,6 @@ function reloadUserPermissions() {
     
     $_SESSION['permissions'] = $permissions;
     
-    // DEBUG: Log permissions
-    error_log("DEBUG: Reloaded permissions for user " . $_SESSION['username'] . ": " . implode(', ', $permissions));
 }
 
 function getUserRole() {
