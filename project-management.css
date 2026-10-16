@@ -4,3 +4,13 @@
 
 /* Relative date controls for project-template task timing */
 .pm-offset-help{margin:0;color:#687780;font-size:12px}.pm-offset-control{display:grid;gap:6px}.pm-offset-control input{width:100%}.pm-offset-buttons{display:flex;gap:7px;flex-wrap:wrap}.pm-offset-buttons .pm-button{font-size:12px;padding:5px 9px}.pm-offset-live{font-size:12px;color:#526873;font-weight:500;line-height:1.4}
+/* Kompakte, einzeilige Eingabe für relative Aufgabenfristen */
+.pm-offset-control{display:grid;grid-template-columns:minmax(125px,1fr) auto 90px;align-items:center;gap:10px;width:100%}
+.pm-offset-description{font-size:13px;font-weight:600;color:#405762;min-width:0}
+.pm-offset-buttons{display:flex;align-items:center;gap:4px;flex-wrap:wrap}
+.pm-offset-buttons .pm-button{font-size:11px;padding:5px 7px;white-space:nowrap}
+.pm-offset-input-area{display:flex;flex-direction:column;gap:2px;min-width:0}
+.pm-offset-input-area input{font-size:12px!important;padding:5px 7px!important;text-align:center}
+.pm-offset-live{font-size:10px;color:#718089;font-weight:400;line-height:1.2;text-align:center}
+@media(max-width:850px){.pm-offset-control{grid-template-columns:minmax(100px,1fr) auto}.pm-offset-input-area{grid-column:1/-1;display:flex;flex-direction:row;align-items:center;gap:6px}.pm-offset-input-area input{max-width:90px}.pm-offset-live{white-space:nowrap}}
+@media(max-width:560px){.pm-offset-control{grid-template-columns:1fr}.pm-offset-buttons{grid-row:2}.pm-offset-input-area{grid-column:auto;grid-row:3}}
