@@ -14,3 +14,95 @@
 .pm-offset-live{font-size:10px;color:#718089;font-weight:400;line-height:1.2;text-align:center}
 @media(max-width:850px){.pm-offset-control{grid-template-columns:minmax(100px,1fr) auto}.pm-offset-input-area{grid-column:1/-1;display:flex;flex-direction:row;align-items:center;gap:6px}.pm-offset-input-area input{max-width:90px}.pm-offset-live{white-space:nowrap}}
 @media(max-width:560px){.pm-offset-control{grid-template-columns:1fr}.pm-offset-buttons{grid-row:2}.pm-offset-input-area{grid-column:auto;grid-row:3}}
+
+/* Aufgabenübersicht: dezente Projektfarbe, klickbare Einzelaufgaben und Status-Icons */
+.pm-task-tile{position:relative;margin:8px;padding:12px;border:1px solid hsl(var(--project-hue) 28% 76% / .75);border-radius:9px;background:hsl(var(--project-hue) 42% 92% / .55);cursor:pointer;transition:background .15s,box-shadow .15s,transform .15s}
+.pm-task-tile:hover{background:hsl(var(--project-hue) 48% 89% / .78);box-shadow:0 2px 8px rgba(0,0,0,.07)}
+.pm-task-tile:focus-visible{outline:2px solid var(--primary-color);outline-offset:2px}
+.pm-task-tile .pm-task-title{display:block;line-height:1.35}
+.pm-task-tile .pm-task-project{font-size:11px;font-weight:600;color:#53646d}
+.pm-task-status-actions{display:flex;gap:6px;align-items:center;margin-top:9px}
+.pm-task-status-actions form{display:inline-flex;margin:0}
+.pm-icon-button{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border:1px solid rgba(50,70,80,.18);border-radius:7px;background:rgba(255,255,255,.75);color:#365261;cursor:pointer}
+.pm-icon-button:hover{background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.12)}
+.pm-icon-progress{color:#8a5d13}.pm-icon-open{color:#53656f}.pm-icon-done{color:#7b858b}
+.pm-task-detail-tile{padding:20px;border:1px solid hsl(var(--project-hue) 28% 76% / .75);border-radius:11px;background:hsl(var(--project-hue) 42% 92% / .55)}
+.pm-task-detail-head{display:flex;justify-content:space-between;align-items:flex-start;gap:20px}
+.pm-task-detail-head h2{margin-top:10px}
+.pm-task-detail-status{margin:16px 0}
+@media(max-width:760px){.pm-task-detail-head{flex-direction:column}.pm-task-tile{margin:8px 5px}}
+
+/* Einheitliche, dezente Projektfarben für Projekte und alle zugehörigen Aufgaben */
+.pm-task-tile,
+.pm-task-detail-tile {
+  border-color: color-mix(in srgb, var(--project-color, #DCEAF0) 70%, #b8c3c9);
+  border-left: 4px solid var(--project-color, #DCEAF0);
+  background: color-mix(in srgb, var(--project-color, #DCEAF0) 22%, white);
+}
+.pm-task-tile:hover,
+.pm-task-detail-tile {
+  background: color-mix(in srgb, var(--project-color, #DCEAF0) 28%, white);
+}
+.pm-project-card {
+  background: color-mix(in srgb, var(--project-color, #DCEAF0) 22%, white);
+  border-color: color-mix(in srgb, var(--project-color, #DCEAF0) 72%, #b8c3c9);
+  border-left: 5px solid var(--project-color, #DCEAF0);
+}
+.pm-project-card:hover {
+  background: color-mix(in srgb, var(--project-color, #DCEAF0) 30%, white);
+  border-color: color-mix(in srgb, var(--project-color, #DCEAF0) 85%, #87949b);
+}
+.pm-project-color-dot,
+.pm-template-color {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 12px;
+  color: #52616a;
+}
+.pm-template-color::before {
+  content: "";
+  display: inline-block;
+  width: 13px;
+  height: 13px;
+  border-radius: 4px;
+  border: 1px solid rgba(40, 55, 65, .18);
+  background: var(--project-color, #DCEAF0);
+}
+.pm-icon-progress,
+.pm-icon-open,
+.pm-icon-done {
+  color: #7b858b;
+}
+.pm-icon-button {
+  background: rgba(255,255,255,.85);
+  border-color: #d2d8dc;
+}
+.pm-icon-button:hover {
+  color: #46545c;
+}
+.pm-task-card {
+  border-color: color-mix(in srgb, var(--project-color, #DCEAF0) 70%, #b8c3c9);
+  border-left: 4px solid var(--project-color, #DCEAF0);
+  background: color-mix(in srgb, var(--project-color, #DCEAF0) 16%, white);
+}
+
+
+/* Kompakte Aufgabenliste in der Projektansicht: Statusfarbe für schnellen Überblick */
+.pm-project-task-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+.pm-project-task{display:flex;flex-direction:column;gap:5px;min-width:0;padding:13px 15px;border:1px solid #dfe5e8;border-left:5px solid var(--project-color,#DCEAF0);border-radius:9px;text-decoration:none;color:#263238;transition:transform .12s,box-shadow .12s,background .12s}
+.pm-project-task:hover{transform:translateY(-1px);box-shadow:0 2px 8px rgba(0,0,0,.08);text-decoration:none}
+.pm-project-task:focus-visible{outline:2px solid var(--primary-color);outline-offset:2px}
+.pm-project-task-title{font-size:16px;font-weight:750;line-height:1.3;color:#243640}
+.pm-project-task-description{font-size:12px;line-height:1.4;color:#59666d;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.pm-project-task-overdue{background:#fff0ef;border-color:#f0c5c2;border-left-color:#d64c4c}
+.pm-project-task-this-week{background:#fff5e5;border-color:#f0d8ac;border-left-color:#e9a23b}
+.pm-project-task-next-week{background:#fbf9e8;border-color:#e7e1ae;border-left-color:#b5c947}
+.pm-project-task-later{background:#edf7ef;border-color:#cde4d2;border-left-color:#66a879}
+.pm-project-task-no-date{background:color-mix(in srgb,var(--project-color,#DCEAF0) 20%,white);border-color:color-mix(in srgb,var(--project-color,#DCEAF0) 65%,#d4dce0)}
+.pm-project-task-done{background:#f7f8f8;border-color:#e7eaec;border-left-color:#d4d9dc;opacity:.62}
+.pm-project-task-done .pm-project-task-title,.pm-project-task-done .pm-project-task-description{color:#7f898e}
+.pm-task-list-legend{display:flex;gap:9px;flex-wrap:wrap;font-size:11px;color:#647179}
+.pm-task-list-legend span:before{content:"";display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:4px}
+.pm-task-list-legend .legend-overdue:before{background:#d64c4c}.pm-task-list-legend .legend-this-week:before{background:#e9a23b}.pm-task-list-legend .legend-next-week:before{background:#b5c947}.pm-task-list-legend .legend-later:before{background:#66a879}
+@media(max-width:760px){.pm-project-task-list{grid-template-columns:minmax(0,1fr)}.pm-section-heading:has(.pm-task-list-legend){flex-direction:column}}

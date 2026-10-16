@@ -15,6 +15,87 @@ if (!isset($_SESSION['user_id'])) {
     header('Location: login.php');
     exit;
 }
+
+$showProjectTasks = hasPermission('ProjectManagement');
+$showFundraisingWidget = hasPermission('view_contacts');
+$fundraisingStats = [
+    'total' => 0, 'contacted' => 0, 'open_total' => 0,
+    'open' => ['Persönlich' => 0, 'Formular' => 0, 'Mail' => 0],
+    'results' => ['Spende zugesagt' => 0, 'Spende abgesagt' => 0, 'Antwort abwarten' => 0],
+];
+$fundraisingLoadError = false;
+$dashboardTasks = [];
+$dashboardGroups = ['overdue'=>[], 'this_week'=>[], 'next_week'=>[], 'later'=>[], 'no_date'=>[]];
+$dashboardCsrf = '';
+if ($showFundraisingWidget) {
+    try {
+        require_once $appRoot . '/db_connection.php';
+        $fundraisingDatabase = new Database();
+        $fundraisingDb = $fundraisingDatabase->getConnection();
+        $fundraisingDb->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+
+        // Vorschläge sind noch keine bestätigten Adressen der laufenden Spendenaktion.
+        $fundraisingRows = $fundraisingDb->query("SELECT typ,
+                COUNT(*) AS amount,
+                SUM(CASE WHEN zuletzt_angeschrieben IS NOT NULL THEN 1 ELSE 0 END) AS contacted,
+                SUM(CASE WHEN status = 'Spende zugesagt' AND zuletzt_angeschrieben IS NOT NULL THEN 1 ELSE 0 END) AS promised,
+                SUM(CASE WHEN status = 'Spende abgesagt' AND zuletzt_angeschrieben IS NOT NULL THEN 1 ELSE 0 END) AS declined,
+                SUM(CASE WHEN status = 'Antwort abwarten' AND zuletzt_angeschrieben IS NOT NULL THEN 1 ELSE 0 END) AS waiting,
+                SUM(CASE WHEN status = 'Handlungsbedarf' OR zuletzt_angeschrieben IS NULL THEN 1 ELSE 0 END) AS open_count
+            FROM contacts
+            WHERE COALESCE(is_suggestion, 0) = 0
+            GROUP BY typ")->fetchAll(PDO::FETCH_ASSOC);
+
+        foreach ($fundraisingRows as $row) {
+            $type = $row['typ'] ?: 'Mail';
+            if (!array_key_exists($type, $fundraisingStats['open'])) $type = 'Mail';
+            $fundraisingStats['total'] += (int)$row['amount'];
+            $fundraisingStats['contacted'] += (int)$row['contacted'];
+            $fundraisingStats['open'][$type] += (int)$row['open_count'];
+            $fundraisingStats['open_total'] += (int)$row['open_count'];
+            $fundraisingStats['results']['Spende zugesagt'] += (int)$row['promised'];
+            $fundraisingStats['results']['Spende abgesagt'] += (int)$row['declined'];
+            $fundraisingStats['results']['Antwort abwarten'] += (int)$row['waiting'];
+        }
+    } catch (Throwable $e) {
+        error_log('Dashboard-Spendenwidget: ' . $e->getMessage());
+        $fundraisingLoadError = true;
+    }
+}
+if ($showProjectTasks) {
+    require_once $appRoot . '/db_connection.php';
+    $database = new Database();
+    $dashboardDb = $database->getConnection();
+    $dashboardDb->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    if (empty($_SESSION['pm_csrf'])) $_SESSION['pm_csrf'] = bin2hex(random_bytes(32));
+    $dashboardCsrf = $_SESSION['pm_csrf'];
+    $query = $dashboardDb->query("SELECT t.*, p.title AS project_title, p.color AS project_color, u.full_name AS assignee
+        FROM tasks t JOIN projects p ON p.id=t.project_id
+        LEFT JOIN users u ON u.id=t.assigned_user_id
+        WHERE p.status='active' AND t.status<>'done'
+        ORDER BY t.due_date IS NULL, t.due_date, t.id");
+    $dashboardTasks = $query->fetchAll(PDO::FETCH_ASSOC);
+    $today = new DateTimeImmutable('today');
+    $monday = new DateTimeImmutable('monday this week');
+    $nextMonday = $monday->modify('+1 week');
+    $afterNextMonday = $monday->modify('+2 weeks');
+    foreach ($dashboardTasks as $task) {
+        if (!$task['due_date']) $group = 'no_date';
+        else {
+            $due = new DateTimeImmutable($task['due_date']);
+            $group = $due < $today ? 'overdue' : ($due < $nextMonday ? 'this_week' : ($due < $afterNextMonday ? 'next_week' : 'later'));
+        }
+        $dashboardGroups[$group][] = $task;
+    }
+}
+function dashboardEscape($value): string { return htmlspecialchars((string)$value, ENT_QUOTES, 'UTF-8'); }
+function dashboardColor($value): string {
+    $value = strtoupper(trim((string)$value));
+    return preg_match('/^#[0-9A-F]{6}$/', $value) ? $value : '#DCEAF0';
+}
+$fundraisingProgress = $fundraisingStats['total'] > 0
+    ? min(100, (int)round($fundraisingStats['contacted'] / $fundraisingStats['total'] * 100))
+    : 0;
 ?>
 <!DOCTYPE html>
 <html lang="de">
@@ -25,10 +106,36 @@ if (!isset($_SESSION['user_id'])) {
     <link rel="stylesheet" href="styles.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="includes/navigation.css">
+    <?php if ($showProjectTasks): ?><link rel="stylesheet" href="project-management.css"><?php endif; ?>
     <style>
-        .dashboard-content {
-            min-height: 180px;
-        }
+        .dashboard-content { min-height: 180px; }
+        .dashboard-project-tasks { margin-top: 24px; }
+        .fundraising-widget { display:block; margin:24px 0 28px; padding:22px 24px; color:inherit; text-decoration:none; background:#fff; border:1px solid #e4e9ed; border-radius:14px; box-shadow:0 3px 14px rgba(28,45,60,.06); transition:box-shadow .18s ease, transform .18s ease; }
+        .fundraising-widget:hover, .fundraising-widget:focus-visible { box-shadow:0 7px 22px rgba(28,45,60,.11); transform:translateY(-1px); outline:none; }
+        .fundraising-widget-head { display:flex; justify-content:space-between; align-items:flex-start; gap:16px; margin-bottom:20px; }
+        .fundraising-widget-title { margin:0; color:#233746; font-size:1.25rem; font-weight:700; }
+        .fundraising-widget-subtitle { margin:6px 0 0; color:#6b7882; font-size:.9rem; }
+        .fundraising-widget-link { flex-shrink:0; color:#496779; font-size:.9rem; font-weight:600; }
+        .fundraising-widget-section-title { margin:0 0 12px; color:#51616c; font-size:.8rem; font-weight:700; letter-spacing:.06em; text-transform:uppercase; }
+        .fundraising-open-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px; }
+        .fundraising-open-card { min-width:0; padding:15px 16px; border:1px solid #e7ecef; border-radius:10px; background:#f8fafb; }
+        .fundraising-open-card .number { display:block; margin-bottom:5px; color:#263e4d; font-size:1.9rem; line-height:1.15; font-weight:750; }
+        .fundraising-open-card .label { color:#4c5d68; font-size:.9rem; }
+        .fundraising-open-card .hint { display:block; margin-top:5px; color:#87939b; font-size:.76rem; }
+        .fundraising-results { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:10px; margin-top:22px; }
+        .fundraising-result { padding:11px 13px; border-radius:9px; background:#f7f9fa; }
+        .fundraising-result .number { display:block; font-size:1.45rem; line-height:1.2; font-weight:750; }
+        .fundraising-result .label { display:block; margin-top:4px; color:#64727b; font-size:.8rem; }
+        .fundraising-result.positive { background:#eef7f0; } .fundraising-result.positive .number { color:#287447; }
+        .fundraising-result.negative { background:#fbf0ef; } .fundraising-result.negative .number { color:#a94c45; }
+        .fundraising-result.waiting { background:#f1f4f6; } .fundraising-result.waiting .number { color:#5c6c77; }
+        .fundraising-result.total { background:#edf4f8; } .fundraising-result.total .number { color:#2e607b; }
+        .fundraising-progress { margin-top:18px; }
+        .fundraising-progress-label { display:flex; justify-content:space-between; gap:12px; margin-bottom:8px; color:#5c6b75; font-size:.85rem; }
+        .fundraising-progress-track { height:8px; overflow:hidden; border-radius:99px; background:#edf0f2; }
+        .fundraising-progress-fill { height:100%; border-radius:99px; background:#5b8b75; }
+        .fundraising-widget-error { margin:0; color:#8d4c35; font-size:.9rem; }
+        @media (max-width:680px) { .fundraising-widget { padding:18px; } .fundraising-widget-head { flex-direction:column; } .fundraising-open-grid { grid-template-columns:1fr; } .fundraising-results { grid-template-columns:repeat(2,minmax(0,1fr)); } }
     </style>
 </head>
 <body>
@@ -37,9 +144,78 @@ if (!isset($_SESSION['user_id'])) {
             <h1>Dashboard</h1>
             <?php require $appRoot . '/includes/navigation.php'; ?>
         </header>
-        <main class="dashboard-content" aria-label="Dashboard-Inhalt">
-            <!-- Hier können später Dashboard-Widgets ergänzt werden. -->
+        <main class="dashboard-content <?= $showProjectTasks ? 'pm-main' : '' ?>" aria-label="Dashboard-Inhalt">
+            <?php if ($showFundraisingWidget): ?>
+                <a class="fundraising-widget" href="index.php" aria-label="Sponsorenübersicht öffnen">
+                    <div class="fundraising-widget-head">
+                        <div>
+                            <h2 class="fundraising-widget-title"><i class="fa-solid fa-hand-holding-heart" aria-hidden="true"></i> Aktuelle Spendenaktion</h2>
+                            <p class="fundraising-widget-subtitle">Handlungsbedarf und bisherige Rückmeldungen · Startdatum nicht hinterlegt</p>
+                        </div>
+                        <span class="fundraising-widget-link">Sponsorenübersicht öffnen <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></span>
+                    </div>
+                    <?php if ($fundraisingLoadError): ?>
+                        <p class="fundraising-widget-error">Die Kennzahlen konnten gerade nicht geladen werden.</p>
+                    <?php else: ?>
+                        <h3 class="fundraising-widget-section-title">Was ist noch zu tun?</h3>
+                        <div class="fundraising-open-grid">
+                            <div class="fundraising-open-card"><span class="number"><?= $fundraisingStats['open']['Persönlich'] ?></span><span class="label">Lokale Geschäfte ansprechen</span><span class="hint">Persönliche Kontakte mit Handlungsbedarf</span></div>
+                            <div class="fundraising-open-card"><span class="number"><?= $fundraisingStats['open']['Formular'] ?></span><span class="label">Formulare ausfüllen</span><span class="hint">Formular-Kontakte mit Handlungsbedarf</span></div>
+                            <div class="fundraising-open-card"><span class="number"><?= $fundraisingStats['open']['Mail'] ?></span><span class="label">E-Mails schreiben</span><span class="hint">Mail-Kontakte mit Handlungsbedarf</span></div>
+                        </div>
+                        <div class="fundraising-progress">
+                            <div class="fundraising-progress-label"><span>Kontaktaufnahme</span><strong><?= $fundraisingStats['contacted'] ?> von <?= $fundraisingStats['total'] ?> Adressen</strong></div>
+                            <div class="fundraising-progress-track" role="progressbar" aria-label="Anteil kontaktierter Adressen" aria-valuemin="0" aria-valuemax="100" aria-valuenow="<?= $fundraisingProgress ?>"><div class="fundraising-progress-fill" style="width:<?= $fundraisingProgress ?>%"></div></div>
+                        </div>
+                        <h3 class="fundraising-widget-section-title" style="margin-top:22px">Ergebnis der bisherigen Ansprache</h3>
+                        <div class="fundraising-results">
+                            <div class="fundraising-result positive"><span class="number"><?= $fundraisingStats['results']['Spende zugesagt'] ?></span><span class="label">Zugesagt</span></div>
+                            <div class="fundraising-result negative"><span class="number"><?= $fundraisingStats['results']['Spende abgesagt'] ?></span><span class="label">Abgesagt</span></div>
+                            <div class="fundraising-result waiting"><span class="number"><?= $fundraisingStats['results']['Antwort abwarten'] ?></span><span class="label">Antwort ausstehend</span></div>
+                            <div class="fundraising-result total"><span class="number"><?= $fundraisingStats['results']['Spende zugesagt'] + $fundraisingStats['results']['Spende abgesagt'] + $fundraisingStats['results']['Antwort abwarten'] ?></span><span class="label">Angefragte Kontakte</span></div>
+                        </div>
+                    <?php endif; ?>
+                </a>
+            <?php endif; ?>
+            <?php if ($showProjectTasks): ?>
+                <?php if (isset($_GET['saved'])): ?><div class="pm-alert pm-success">Aufgabenstatus wurde aktualisiert.</div><?php endif; ?>
+                <section class="pm-section dashboard-project-tasks">
+                    <div class="pm-section-heading"><div><h2>Aufgaben nach Fälligkeit</h2></div><a class="pm-button small secondary" href="projects.php">Alle Aufgaben</a></div>
+                    <div class="pm-week-grid">
+                        <?php $dashboardLabels = ['overdue'=>'Überfällig','this_week'=>'Diese Woche','next_week'=>'Nächste Woche','later'=>'Später','no_date'=>'Ohne Fälligkeit']; foreach ($dashboardLabels as $groupKey => $groupLabel): ?>
+                            <section class="pm-week-column pm-<?= dashboardEscape($groupKey) ?>">
+                                <h3><?= dashboardEscape($groupLabel) ?><span><?= count($dashboardGroups[$groupKey]) ?></span></h3>
+                                <?php if (!$dashboardGroups[$groupKey]): ?><p class="pm-empty">Keine Aufgaben</p>
+                                <?php else: foreach ($dashboardGroups[$groupKey] as $task): $taskColor = dashboardColor($task['project_color'] ?? null); ?>
+                                    <article class="pm-task-row pm-task-tile" style="--project-color:<?= dashboardEscape($taskColor) ?>" data-task-url="projects.php?view=task&amp;id=<?= (int)$task['id'] ?>" tabindex="0" role="link" aria-label="Aufgabe öffnen: <?= dashboardEscape($task['title']) ?>">
+                                        <a class="pm-task-title" href="projects.php?view=task&amp;id=<?= (int)$task['id'] ?>"><?= dashboardEscape($task['title']) ?></a>
+                                        <div class="pm-task-project"><?= dashboardEscape($task['project_title']) ?></div>
+                                        <?php if (!empty($task['assignee'])): ?><div class="pm-task-meta"><span class="pm-assignee">Übernommen: <?= dashboardEscape($task['assignee']) ?></span></div><?php endif; ?>
+                                        <div class="pm-task-status-actions" aria-label="Aufgabenstatus ändern">
+                                            <?php if ($task['status'] !== 'in_progress'): ?>
+                                                <form method="post" action="projects.php"><input type="hidden" name="csrf_token" value="<?= dashboardEscape($dashboardCsrf) ?>"><input type="hidden" name="action" value="set_task_status"><input type="hidden" name="task_id" value="<?= (int)$task['id'] ?>"><input type="hidden" name="status" value="in_progress"><input type="hidden" name="return_to" value="dashboard"><button class="pm-icon-button pm-icon-progress" type="submit" title="Als in Bearbeitung markieren" aria-label="Als in Bearbeitung markieren"><i class="fa-solid fa-play"></i></button></form>
+                                            <?php else: ?>
+                                                <form method="post" action="projects.php"><input type="hidden" name="csrf_token" value="<?= dashboardEscape($dashboardCsrf) ?>"><input type="hidden" name="action" value="set_task_status"><input type="hidden" name="task_id" value="<?= (int)$task['id'] ?>"><input type="hidden" name="status" value="open"><input type="hidden" name="return_to" value="dashboard"><button class="pm-icon-button pm-icon-open" type="submit" title="Wieder auf offen setzen" aria-label="Wieder auf offen setzen"><i class="fa-solid fa-rotate-left"></i></button></form>
+                                            <?php endif; ?>
+                                            <form method="post" action="projects.php"><input type="hidden" name="csrf_token" value="<?= dashboardEscape($dashboardCsrf) ?>"><input type="hidden" name="action" value="set_task_status"><input type="hidden" name="task_id" value="<?= (int)$task['id'] ?>"><input type="hidden" name="status" value="done"><input type="hidden" name="return_to" value="dashboard"><button class="pm-icon-button pm-icon-done" type="submit" title="Als erledigt markieren" aria-label="Als erledigt markieren"><i class="fa-regular fa-square-check"></i></button></form>
+                                        </div>
+                                    </article>
+                                <?php endforeach; endif; ?>
+                            </section>
+                        <?php endforeach; ?>
+                    </div>
+                </section>
+            <?php endif; ?>
         </main>
+        <?php if ($showProjectTasks): ?>
+        <script>
+        document.querySelectorAll('.pm-task-tile[data-task-url]').forEach(card => {
+            const go = () => window.location.href = card.dataset.taskUrl.replace('&amp;', '&');
+            card.addEventListener('click', event => { if (!event.target.closest('a,button,form,input,textarea,select,label')) go(); });
+            card.addEventListener('keydown', event => { if ((event.key === 'Enter' || event.key === ' ') && !event.target.closest('a,button,form,input,textarea,select,label')) { event.preventDefault(); go(); } });
+        });
+        </script>
+        <?php endif; ?>
     </div>
 </body>
 </html>

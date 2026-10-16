@@ -48,3 +48,8 @@ Dieses Paket ist ein Abschlussstand für die weitere Prüfung und Übernahme. Es
 ## Header-Stabilisierung
 
 Die angemeldeten Seiten verwenden einen gemeinsamen Seitenkopf (`app-page-header`) mit festem Grid-Verhältnis für Überschrift und Navigation. Dadurch bleibt der rechte Navigationsbereich beim Wechsel zwischen Dashboard und Unterseiten stabil ausgerichtet. Auf schmalen Displays werden Überschrift und Navigation untereinander angeordnet.
+
+
+### Projektfarben (aktualisiert am 16.10.2026)
+
+Vor der neuen Version einmalig `database/migrations/2026-10-16_03_project_colors.sql` in der bestehenden Förderverein-intern-Datenbank ausführen. Die Migration ergänzt eine Farbe für Projektvorlagen und konkrete Projekte. Neue Projekte übernehmen die Farbe ihrer Vorlage; eine Projektfarbe kann anschließend unabhängig am konkreten Projekt geändert werden.
