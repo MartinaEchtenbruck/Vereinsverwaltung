@@ -3,11 +3,6 @@
  * Einheitliche globale Navigation für angemeldete Seiten.
  * Voraussetzung: auth.php wurde bereits eingebunden und die Session läuft.
  */
-// Berechtigungen bei jeder Navigation frisch aus der Datenbank laden, damit
-// Änderungen an Rollen/Rechten ohne erneute Anmeldung sichtbar werden.
-if (isset($_SESSION['user_id']) && function_exists('reloadUserPermissions')) {
-    reloadUserPermissions();
-}
 $navigationItems = require __DIR__ . '/../config/navigation.php';
 $currentPage = basename(parse_url($_SERVER['SCRIPT_NAME'] ?? '', PHP_URL_PATH) ?: '');
 $currentUserName = $_SESSION['full_name'] ?? $_SESSION['username'] ?? 'Benutzer';
