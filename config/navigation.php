@@ -26,6 +26,12 @@ return [
         'permission' => 'edit_fundraising',
     ],
     [
+        'label' => 'Projektmanagement',
+        'url' => 'projects.php',
+        'icon' => 'fas fa-list-check',
+        'permission' => 'ProjectManagement',
+    ],
+    [
         'label' => 'Benutzerverwaltung',
         'url' => 'users.php',
         'icon' => 'fas fa-users',

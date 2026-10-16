@@ -14,7 +14,8 @@
 - `app/Modules/Spendenaktionen/Actions/`: Aktionen zum Zurücksetzen des Kontaktstatus und zum Bulk-Mail-Versand
 - `app/Modules/Benutzerverwaltung/Pages/`: Anmeldung, Benutzerverwaltung, Rollen/Berechtigungen, Registrierung und Passwort-Wiederherstellung
 - `app/Modules/Benutzerverwaltung/Actions/`: AJAX-Prüfung des Benutzernamens
-- `app/Modules/Projekte/` und `app/Modules/Verkauf/`: vorbereitete Bereiche für spätere Erweiterungen
+- `app/Modules/Projekte/`: Projektmanagement mit Vorlagen, Aufgaben, Übernahme und Kommentaren
+- `app/Modules/Verkauf/`: vorbereiteter Bereich für spätere Erweiterungen
 
 ## Navigation
 - `config/navigation.php` definiert die Navigationspunkte zentral inklusive Ziel-URL, Symbol und Berechtigung. Der Dashboard-Link ist für alle angemeldeten Benutzer sichtbar; andere Bereiche bleiben berechtigungsabhängig.
@@ -47,3 +48,11 @@ Bei der Prüfung wurden dateibasierte Debug-Protokolle aus der Kontaktseite und 
 
 ## Dashboard als Startseite
 Nach erfolgreicher Anmeldung sowie beim Aufruf der Anmeldeseite durch eine bereits angemeldete Person erfolgt die Weiterleitung zu `dashboard.php`. Auch angemeldete Benutzer, die `register.php` aufrufen, werden zum Dashboard geleitet. Die Sponsorenübersicht bleibt unter der bisherigen URL `index.php` erreichbar. Das Dashboard ist für alle angemeldeten Benutzer zugänglich; die übrigen Navigationspunkte werden weiterhin anhand der jeweiligen Berechtigungen angezeigt.
+
+
+## Projektmanagement (MVP)
+- Einstiegspunkt: `projects.php`; Modulimplementierung: `app/Modules/Projekte/Pages/index.php`; Gestaltung: `project-management.css`.
+- Die Seite und der Vorschau-Endpunkt prüfen serverseitig `ProjectManagement`. Die Berechtigung wird per Migration ausschließlich der Rolle `Manager` zugeordnet.
+- `database/migrations/2026-10-16_project_management.sql` legt eigene Tabellen an und seedet eine Sponsorenlauf-Vorlage samt beispielhaften Aufgabenvorlagen. Bestehende Tabellen werden nicht geändert.
+- Die App speichert relative Fristen als Tage zum Veranstaltungsdatum bzw. Projektstart. Beim Erstellen werden ausgewählte Vorlagenaufgaben in eigenständige Aufgaben kopiert.
+- Der Erststand enthält keine Kalenderansicht und keine Benachrichtigungen. Vor Übernahme in den Produktivbetrieb muss die Migration in einer gesicherten Testdatenbank und die Oberfläche auf dem Zielserver getestet werden.

@@ -190,13 +190,6 @@ try {
             text-align: right;
         }
         
-        .permission-category {
-            background-color: #f8f9fa;
-            padding: 10px 15px;
-            border-radius: 4px;
-            margin-bottom: 15px;
-        }
-        
         .header-links {
             font-size: 14px;
         }
@@ -261,18 +254,8 @@ try {
                     <form method="POST" id="permissionsForm">
                         <input type="hidden" name="role_id" id="formRoleId">
                         
-                        <div class="permission-category">
-                            <h4>Kontakt-Berechtigungen</h4>
-                        </div>
-                        <div class="permissions-grid" id="contactPermissions">
-                            <!-- Wird per JavaScript gefüllt -->
-                        </div>
-                        
-                        <div class="permission-category">
-                            <h4>System-Berechtigungen</h4>
-                        </div>
-                        <div class="permissions-grid" id="systemPermissions">
-                            <!-- Wird per JavaScript gefüllt -->
+                        <div class="permissions-grid" id="allPermissions">
+                            <!-- Alle in der Datenbank vorhandenen Berechtigungen werden per JavaScript eingefügt. -->
                         </div>
                         
                         <div class="form-actions">
@@ -305,12 +288,6 @@ try {
         const roles = <?php echo json_encode($roles); ?>;
         const permissions = <?php echo json_encode($permissions); ?>;
         const rolePermissions = <?php echo json_encode($role_permissions); ?>;
-        
-        // Kategorien für Berechtigungen
-        const permissionCategories = {
-            'contact': ['view_contacts', 'add_contacts', 'edit_contacts', 'delete_contacts', 'send_emails', 'change_status', 'edit_comments', 'suggest_contacts'],
-            'system': ['view_reports', 'manage_users', 'manage_settings', 'export_data', 'edit_fundraising']
-        };
         
         let selectedRoleId = null;
         
@@ -345,32 +322,20 @@ try {
         }
         
         function fillPermissionsForm(roleId) {
-            const contactContainer = document.getElementById('contactPermissions');
-            const systemContainer = document.getElementById('systemPermissions');
-            
-            contactContainer.innerHTML = '';
-            systemContainer.innerHTML = '';
-            
-            const currentPermissions = rolePermissions[roleId] || [];
-            
-            // Debug-Ausgabe
-            console.log('Current permissions for role', roleId, ':', currentPermissions);
-            console.log('All permissions:', permissions);
-            
-            // Berechtigungen nach Kategorien gruppiert anzeigen
+            const permissionsContainer = document.getElementById('allPermissions');
+            permissionsContainer.innerHTML = '';
+
+            const currentPermissions = (rolePermissions[roleId] || []).map(Number);
+
+            // Alle Berechtigungen aus der Datenbank anzeigen, unabhängig von ihrem Namen.
             permissions.forEach(permission => {
-                // Korrekte Prüfung ob Berechtigung aktiviert ist
-                const isChecked = currentPermissions.includes(parseInt(permission.id));
-                console.log(`Permission ${permission.id} (${permission.permission_name}): ${isChecked}`);
-                
-                const permissionItem = createPermissionItem(permission, isChecked);
-                
-                if (permissionCategories.contact.includes(permission.permission_name)) {
-                    contactContainer.appendChild(permissionItem);
-                } else if (permissionCategories.system.includes(permission.permission_name)) {
-                    systemContainer.appendChild(permissionItem);
-                }
+                const isChecked = currentPermissions.includes(Number(permission.id));
+                permissionsContainer.appendChild(createPermissionItem(permission, isChecked));
             });
+
+            if (permissions.length === 0) {
+                permissionsContainer.textContent = 'In der Datenbank sind noch keine Berechtigungen angelegt.';
+            }
         }
         
         function createPermissionItem(permission, isChecked) {
