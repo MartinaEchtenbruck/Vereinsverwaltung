@@ -11,6 +11,13 @@ if (!defined('APP_ENTRY_POINT')) {
 $appRoot = dirname(__DIR__, 4);
 require_once $appRoot . '/auth.php';
 checkPermission('view_contacts');
+
+// Optionale Filterparameter, z. B. aus den Infoboxen des Dashboard-Spendenwidgets.
+$initialContactType = $_GET['contact_type'] ?? 'alle';
+if (!in_array($initialContactType, ['alle', 'Mail', 'Formular', 'Persönlich'], true)) $initialContactType = 'alle';
+$initialContactStatus = $_GET['contact_status'] ?? '';
+if (!in_array($initialContactStatus, ['', 'pending', 'action_needed'], true)) $initialContactStatus = '';
+$excludeSuggestionsInitially = ($_GET['exclude_suggestions'] ?? '') === '1';
 ?>
 <!DOCTYPE html>
 <html lang="de">
@@ -92,24 +99,24 @@ checkPermission('view_contacts');
                 <div class="filter-group">
                     <label for="contactTypeFilter" class="filter-label">Kontakttyp:</label>
                     <select id="contactTypeFilter" class="filter-select">
-                        <option value="alle" selected>Alle Kontakte</option>
-                        <option value="Mail">Mail-Kontakte</option>
-                        <option value="Formular">Formular-Kontakte</option>
-                        <option value="Persönlich">Lokale Kontakte</option>
+                        <option value="alle" <?= $initialContactType === 'alle' ? 'selected' : '' ?>>Alle Kontakte</option>
+                        <option value="Mail" <?= $initialContactType === 'Mail' ? 'selected' : '' ?>>Mail-Kontakte</option>
+                        <option value="Formular" <?= $initialContactType === 'Formular' ? 'selected' : '' ?>>Formular-Kontakte</option>
+                        <option value="Persönlich" <?= $initialContactType === 'Persönlich' ? 'selected' : '' ?>>Lokale Kontakte</option>
                     </select>
                 </div>
                 
                 <span class="filter-label">Statusfilter:</span>
                 <div class="filter-checkbox">
-                    <input type="checkbox" id="filterAnfrageAusstehend" checked>
+                    <input type="checkbox" id="filterAnfrageAusstehend" <?= $initialContactStatus === 'pending' || $initialContactStatus === '' ? 'checked' : '' ?>>
                     <label for="filterAnfrageAusstehend">Anfrage ausstehend</label>
                 </div>
                 <div class="filter-checkbox">
-                    <input type="checkbox" id="filterAntwort" checked>
+                    <input type="checkbox" id="filterAntwort" <?= $initialContactStatus === '' ? 'checked' : '' ?>>
                     <label for="filterAntwort">Antwort abwarten</label>
                 </div>
                 <div class="filter-checkbox">
-                    <input type="checkbox" id="filterHandlungsbedarf" checked>
+                    <input type="checkbox" id="filterHandlungsbedarf" <?= $initialContactStatus === 'action_needed' || $initialContactStatus === '' ? 'checked' : '' ?>>
                     <label for="filterHandlungsbedarf">Handlungsbedarf</label>
                 </div>
                 <div class="filter-checkbox">
@@ -238,6 +245,7 @@ checkPermission('view_contacts');
     <script>
         // Benutzerberechtigungen an Frontend übergeben - ZUERST definieren
         const USER_PERMISSIONS = <?php echo json_encode($_SESSION['permissions'] ?? []); ?>;
+        const EXCLUDE_SUGGESTIONS_INITIALLY = <?= $excludeSuggestionsInitially ? 'true' : 'false' ?>;
         console.log('User Permissions:', USER_PERMISSIONS);
     </script>
     

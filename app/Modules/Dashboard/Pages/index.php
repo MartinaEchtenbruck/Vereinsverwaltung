@@ -47,7 +47,7 @@ if ($showFundraisingWidget) {
                     SUM(CASE WHEN status = 'Spende zugesagt' AND zuletzt_angeschrieben IS NOT NULL THEN 1 ELSE 0 END) AS promised,
                     SUM(CASE WHEN status = 'Spende abgesagt' AND zuletzt_angeschrieben IS NOT NULL THEN 1 ELSE 0 END) AS declined,
                     SUM(CASE WHEN status = 'Antwort abwarten' AND zuletzt_angeschrieben IS NOT NULL THEN 1 ELSE 0 END) AS waiting,
-                    SUM(CASE WHEN status = 'Handlungsbedarf' OR zuletzt_angeschrieben IS NULL THEN 1 ELSE 0 END) AS open_count,
+                    SUM(CASE WHEN COALESCE(status, '') IN ('', 'Anfrage ausstehend') THEN 1 ELSE 0 END) AS open_count,
                     SUM(CASE WHEN status = 'Handlungsbedarf' THEN 1 ELSE 0 END) AS action_needed_status
                 FROM contacts
                 WHERE COALESCE(is_suggestion, 0) = 0
@@ -119,8 +119,10 @@ $fundraisingProgress = $fundraisingStats['total'] > 0
     <style>
         .dashboard-content { min-height: 180px; }
         .dashboard-project-tasks { margin-top: 24px; }
-        .fundraising-widget { display:block; margin:24px 0 28px; padding:22px 24px; color:inherit; text-decoration:none; background:#fff; border:1px solid #e4e9ed; border-radius:14px; box-shadow:0 3px 14px rgba(28,45,60,.06); transition:box-shadow .18s ease, transform .18s ease; }
-        .fundraising-widget:hover, .fundraising-widget:focus-visible { box-shadow:0 7px 22px rgba(28,45,60,.11); transform:translateY(-1px); outline:none; }
+        .fundraising-widget { display:block; margin:24px 0 28px; padding:22px 24px; color:inherit; background:#fff; border:1px solid #e4e9ed; border-radius:14px; box-shadow:0 3px 14px rgba(28,45,60,.06); }
+        .fundraising-open-card { display:block; color:inherit; text-decoration:none; transition:background .18s ease, border-color .18s ease, box-shadow .18s ease; }
+        .fundraising-open-card:hover, .fundraising-open-card:focus-visible { background:#eef4f7; border-color:#b8cbd5; box-shadow:0 3px 10px rgba(28,45,60,.08); outline:2px solid transparent; }
+        .fundraising-open-card:focus-visible { outline:2px solid #496779; outline-offset:2px; }
         .fundraising-widget-head { display:flex; justify-content:space-between; align-items:flex-start; gap:16px; margin-bottom:20px; }
         .fundraising-widget-title { margin:0; color:#233746; font-size:1.25rem; font-weight:700; }
         .fundraising-widget-subtitle { margin:6px 0 0; color:#6b7882; font-size:.9rem; }
@@ -183,7 +185,7 @@ $fundraisingProgress = $fundraisingStats['total'] > 0
                 </section>
             <?php endif; ?>
             <?php if ($showFundraisingWidget): ?>
-                <a class="fundraising-widget" href="index.php" aria-label="Sponsorenübersicht öffnen">
+                <section class="fundraising-widget" aria-label="Übersicht der aktuellen Spendenaktion">
                     <div class="fundraising-widget-head">
                         <div>
                             <h2 class="fundraising-widget-title"><i class="fa-solid fa-hand-holding-heart" aria-hidden="true"></i> Spendenaktion</h2>
@@ -193,7 +195,7 @@ $fundraisingProgress = $fundraisingStats['total'] > 0
                                 <p class="fundraising-widget-subtitle">Aktuell läuft keine Spendenaktion.</p>
                             <?php endif; ?>
                         </div>
-                        <span class="fundraising-widget-link">Sponsorenübersicht öffnen <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></span>
+
                     </div>
                     <?php if ($fundraisingLoadError): ?>
                         <p class="fundraising-widget-error">Die Kennzahlen konnten gerade nicht geladen werden.</p>
@@ -202,10 +204,10 @@ $fundraisingProgress = $fundraisingStats['total'] > 0
                     <?php else: ?>
                         <h3 class="fundraising-widget-section-title">Was ist noch zu tun?</h3>
                         <div class="fundraising-open-grid">
-                            <div class="fundraising-open-card"><span class="number"><?= $fundraisingStats['open']['Persönlich'] ?></span><span class="label">Lokale Geschäfte ansprechen</span></div>
-                            <div class="fundraising-open-card"><span class="number"><?= $fundraisingStats['open']['Formular'] ?></span><span class="label">Formulare ausfüllen</span></div>
-                            <div class="fundraising-open-card"><span class="number"><?= $fundraisingStats['open']['Mail'] ?></span><span class="label">E-Mails schreiben</span></div>
-                            <div class="fundraising-open-card"><span class="number"><?= $fundraisingStats['action_needed_status'] ?></span><span class="label">Kontakte mit Handlungsbedarf</span></div>
+                            <a class="fundraising-open-card" href="index.php?contact_type=Pers%C3%B6nlich&amp;contact_status=pending&amp;exclude_suggestions=1" aria-label="Lokale Kontakte mit ausstehender Anfrage anzeigen"><span class="number"><?= $fundraisingStats['open']['Persönlich'] ?></span><span class="label">Lokale Kontakte ansprechen <i class="fa-solid fa-arrow-up-right-from-square" aria-hidden="true"></i></span></a>
+                            <a class="fundraising-open-card" href="index.php?contact_type=Formular&amp;contact_status=pending&amp;exclude_suggestions=1" aria-label="Formularkontakte mit ausstehender Anfrage anzeigen"><span class="number"><?= $fundraisingStats['open']['Formular'] ?></span><span class="label">Formulare ausfüllen <i class="fa-solid fa-arrow-up-right-from-square" aria-hidden="true"></i></span></a>
+                            <a class="fundraising-open-card" href="index.php?contact_type=Mail&amp;contact_status=pending&amp;exclude_suggestions=1" aria-label="Mail-Kontakte mit ausstehender Anfrage anzeigen"><span class="number"><?= $fundraisingStats['open']['Mail'] ?></span><span class="label">E-Mails schreiben <i class="fa-solid fa-arrow-up-right-from-square" aria-hidden="true"></i></span></a>
+                            <a class="fundraising-open-card" href="index.php?contact_status=action_needed&amp;exclude_suggestions=1" aria-label="Alle Kontakte mit Handlungsbedarf anzeigen"><span class="number"><?= $fundraisingStats['action_needed_status'] ?></span><span class="label">Kontakte mit Handlungsbedarf <i class="fa-solid fa-arrow-up-right-from-square" aria-hidden="true"></i></span></a>
                         </div>
                         <div class="fundraising-progress">
                             <div class="fundraising-progress-label"><span>Kontaktaufnahme</span><strong><?= $fundraisingStats['contacted'] ?> von <?= $fundraisingStats['total'] ?> Adressen</strong></div>
@@ -219,7 +221,7 @@ $fundraisingProgress = $fundraisingStats['total'] > 0
                             <div class="fundraising-result total"><span class="number"><?= $fundraisingStats['results']['Spende zugesagt'] + $fundraisingStats['results']['Spende abgesagt'] + $fundraisingStats['results']['Antwort abwarten'] ?></span><span class="label">Angefragte Kontakte</span></div>
                         </div>
                     <?php endif; ?>
-                </a>
+                </section>
             <?php endif; ?>
         </main>
         <?php if ($showProjectTasks): ?>

@@ -21,7 +21,7 @@ class Utils {
         
         let filteredContacts = contactsToFilter.filter(contact => {
             // Leeren Status als "Anfrage ausstehend" behandeln
-            if (!contact.Status || contact.Status === '') {
+            if (!contact.Status || contact.Status === '' || contact.Status === 'Anfrage ausstehend') {
                 return filterAnfrageAusstehend;
             }
             switch(contact.Status) {

@@ -50,7 +50,7 @@ class TableManager {
                     <td>${Utils.generateContactInfoHTML(contact)}</td>
                     <td>
                         <select class="status-select" data-id="${contact.PrimaryKey}" ${canChangeStatusForContact ? '' : 'disabled'}>
-                            <option value="" ${(!contact.Status || contact.Status === '') ? 'selected' : ''} class="status-option">Anfrage ausstehend</option>
+                            <option value="" ${(!contact.Status || contact.Status === '' || contact.Status === 'Anfrage ausstehend') ? 'selected' : ''} class="status-option">Anfrage ausstehend</option>
                             <option value="Antwort abwarten" ${contact.Status === 'Antwort abwarten' ? 'selected' : ''} class="status-option">Antwort abwarten</option>
                             <option value="Spende zugesagt" ${contact.Status === 'Spende zugesagt' ? 'selected' : ''} class="status-option">Spende zugesagt</option>
                             <option value="Handlungsbedarf" ${contact.Status === 'Handlungsbedarf' ? 'selected' : ''} class="status-option">Handlungsbedarf</option>

@@ -34,7 +34,9 @@ class App {
                 return;
             }
             
-            contacts = result;
+            contacts = EXCLUDE_SUGGESTIONS_INITIALLY
+                ? result.filter(contact => Number(contact.is_suggestion) !== 1)
+                : result;
             
             // Tabelle anzeigen
             TableManager.displayContacts();
