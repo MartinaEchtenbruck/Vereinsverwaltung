@@ -90,9 +90,15 @@
 
 /* Kompakte Aufgabenliste in der Projektansicht: Statusfarbe für schnellen Überblick */
 .pm-project-task-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
-.pm-project-task{display:flex;flex-direction:column;gap:5px;min-width:0;padding:13px 15px;border:1px solid #dfe5e8;border-left:5px solid var(--project-color,#DCEAF0);border-radius:9px;text-decoration:none;color:#263238;transition:transform .12s,box-shadow .12s,background .12s}
-.pm-project-task:hover{transform:translateY(-1px);box-shadow:0 2px 8px rgba(0,0,0,.08);text-decoration:none}
-.pm-project-task:focus-visible{outline:2px solid var(--primary-color);outline-offset:2px}
+.pm-project-task{display:block;min-width:0;padding:13px 15px;border:1px solid #dfe5e8;border-left:5px solid var(--project-color,#DCEAF0);border-radius:9px;color:#263238;transition:transform .12s,box-shadow .12s,background .12s}
+.pm-project-task:hover{transform:translateY(-1px);box-shadow:0 2px 8px rgba(0,0,0,.08)}
+.pm-project-task:focus-within{outline:2px solid var(--primary-color);outline-offset:2px}
+.pm-project-task-main{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.pm-project-task-link{display:flex;flex:1;flex-direction:column;gap:5px;min-width:0;text-decoration:none;color:inherit}
+.pm-project-task-link:hover{text-decoration:none}
+.pm-project-task-status-actions{display:flex;flex:0 0 auto;gap:5px;align-items:center}
+.pm-project-task-status-actions form{display:inline-flex;margin:0}
+.pm-project-task-status-actions .pm-icon-button{width:28px;height:28px}
 .pm-project-task-title{font-size:16px;font-weight:750;line-height:1.3;color:#243640}
 .pm-project-task-description{font-size:12px;line-height:1.4;color:#59666d;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .pm-project-task-overdue{background:#fff0ef;border-color:#f0c5c2;border-left-color:#d64c4c}
@@ -106,3 +112,32 @@
 .pm-task-list-legend span:before{content:"";display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:4px}
 .pm-task-list-legend .legend-overdue:before{background:#d64c4c}.pm-task-list-legend .legend-this-week:before{background:#e9a23b}.pm-task-list-legend .legend-next-week:before{background:#b5c947}.pm-task-list-legend .legend-later:before{background:#66a879}
 @media(max-width:760px){.pm-project-task-list{grid-template-columns:minmax(0,1fr)}.pm-section-heading:has(.pm-task-list-legend){flex-direction:column}}
+
+@media(max-width:520px){.pm-project-task-main{gap:8px}.pm-project-task-status-actions{gap:3px}.pm-project-task-status-actions .pm-icon-button{width:26px;height:26px}}
+
+
+/* Statusaktionen in der Aufgabenliste eines geöffneten Projekts: unabhängig von Icon-Fonts */
+.pm-project-task-main > .pm-project-task-status-actions {
+  display: flex !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  position: relative;
+  z-index: 2;
+  flex: 0 0 auto;
+  align-self: flex-start;
+  gap: 5px;
+}
+.pm-project-task-status-actions form { display: inline-flex !important; visibility: visible !important; margin: 0; }
+.pm-project-task-status-actions .pm-icon-button {
+  display: inline-flex !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  align-items: center;
+  justify-content: center;
+  min-width: 30px; width: 30px; height: 30px;
+  padding: 0; font-size: 15px; line-height: 1;
+}
+.pm-project-task-status-actions .pm-status-glyph {
+  display: inline-block; visibility: visible; opacity: 1;
+  font-family: Arial, sans-serif; font-weight: 700; line-height: 1;
+}

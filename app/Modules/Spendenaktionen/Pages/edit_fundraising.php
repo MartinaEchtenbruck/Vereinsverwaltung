@@ -12,13 +12,10 @@ checkPermission('edit_fundraising');
 
 require_once $appRoot . '/db_connection.php';
 
-// ---------------------------------------------------------------------------
-// Platzhalter-Daten (später durch DB-Abfragen ersetzen)
-// ---------------------------------------------------------------------------
-$currentFundraising = [
-    'started_at'  => '01.10.2024',
-    'status'      => 'aktiv',
-];
+// Aktive Spendenaktion aus der Datenbank laden. Die Migration
+// database/migrations/2026-10-16_04_fundraising_campaigns.sql muss zuvor ausgeführt sein.
+$currentFundraising = null;
+$campaignHistory = [];
 
 // Kontakte zählen (nur zur Anzeige)
 $contactCount = 0;
@@ -36,6 +33,11 @@ $pendingMailContacts = 0;
 try {
     $database = new Database();
     $conn = $database->getConnection();
+    $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+
+    $activeCampaignStmt = $conn->query("SELECT id, name, started_at, ended_at FROM fundraising_campaigns WHERE ended_at IS NULL ORDER BY started_at DESC, id DESC LIMIT 1");
+    $currentFundraising = $activeCampaignStmt->fetch(PDO::FETCH_ASSOC) ?: null;
+    $campaignHistory = $conn->query("SELECT id, name, started_at, ended_at FROM fundraising_campaigns ORDER BY started_at DESC, id DESC LIMIT 10")->fetchAll(PDO::FETCH_ASSOC);
 
     $contactCount = (int)$conn->query("SELECT COUNT(*) FROM contacts")->fetchColumn();
 
@@ -335,62 +337,38 @@ $bulkAborted = isset($_GET['bulk_aborted']) && $_GET['bulk_aborted'] === '1';
             <?php require $appRoot . '/includes/navigation.php'; ?>
         </header>
 
-        <!-- Aktuelle Aktion -->
+        <!-- Aktuelle Aktion und Start/Ende -->
         <div class="fundraising-card">
-            <h2><i class="fas fa-bullhorn"></i> Aktuelle Spendenaktion</h2>
-
-            <div class="meta-grid">
-                <div class="meta-item">
-                    <div class="label">Gestartet am</div>
-                    <div class="value"><?php echo htmlspecialchars($currentFundraising['started_at']); ?></div>
+            <h2><i class="fas fa-bullhorn"></i> Spendenaktion</h2>
+            <?php if ($currentFundraising): ?>
+                <div class="meta-grid">
+                    <div class="meta-item"><div class="label">Aktuelle Aktion</div><div class="value"><?php echo htmlspecialchars($currentFundraising['name']); ?></div></div>
+                    <div class="meta-item"><div class="label">Gestartet am</div><div class="value"><?php echo htmlspecialchars(date('d.m.Y', strtotime($currentFundraising['started_at']))); ?></div></div>
+                    <div class="meta-item"><div class="label">Status</div><div class="value"><span class="status-badge active">Aktiv</span></div></div>
                 </div>
-                <div class="meta-item">
-                    <div class="label">Status</div>
-                    <div class="value">
-                        <span class="status-badge <?php echo $currentFundraising['status'] === 'aktiv' ? 'active' : 'finished'; ?>">
-                            <?php echo htmlspecialchars(ucfirst($currentFundraising['status'])); ?>
-                        </span>
-                    </div>
+                <div class="info-box" style="margin-top:20px;">Die Spendenaktion läuft. Beim Beenden wird das Enddatum gespeichert. Die Kontaktstatus bleiben zunächst unverändert und sind nach dem Beenden weiterhin in der Sponsorenübersicht sichtbar.</div>
+                <div class="actions" style="margin-top:16px"><button type="button" class="btn btn-warning" id="endFundraisingBtn"><i class="fas fa-flag-checkered"></i> &nbsp;Spendenaktion beenden</button></div>
+            <?php else: ?>
+                <div class="info-box" style="margin-top:0">Aktuell läuft keine Spendenaktion. Starte eine neue Aktion, sobald die Kontaktaufnahme beginnen soll. Dabei werden die Kontaktstatus für die neue Runde zurückgesetzt.</div>
+                <div class="form-group" style="margin-top:18px;max-width:520px">
+                    <label for="fundraisingName">Name der Spendenaktion (optional)</label>
+                    <input type="text" id="fundraisingName" class="form-control" maxlength="150" placeholder="Standard: Spendenaktion <?php echo date('Y'); ?>">
+                    <small>Wenn du keinen Namen angibst, wird automatisch „Spendenaktion <?php echo date('Y'); ?>“ verwendet.</small>
                 </div>
-                <div class="meta-item">
-                    <div class="label">Kontakte gesamt</div>
-                    <div class="value"><?php echo $contactCount; ?></div>
-                </div>
-            </div>
-
-            <div class="info-box" style="margin-top: 20px;">
-                <strong>Statusverteilung der Kontakte:</strong>
-                <ul style="margin: 10px 0 0 0; padding-left: 20px;">
-                    <li>Anfrage ausstehend: <strong><?php echo $contactStatusCounts[''] ?? 0; ?></strong></li>
-                    <li>Antwort abwarten: <strong><?php echo $contactStatusCounts['Antwort abwarten'] ?? 0; ?></strong></li>
-                    <li>Spende zugesagt: <strong><?php echo $contactStatusCounts['Spende zugesagt'] ?? 0; ?></strong></li>
-                    <li>Handlungsbedarf: <strong><?php echo $contactStatusCounts['Handlungsbedarf'] ?? 0; ?></strong></li>
-                    <li>Spende abgesagt: <strong><?php echo $contactStatusCounts['Spende abgesagt'] ?? 0; ?></strong></li>
-                </ul>
-            </div>
+                <div class="actions" style="margin-top:14px"><button type="button" class="btn btn-primary" id="startFundraisingBtn"><i class="fas fa-play"></i> &nbsp;Neue Spendenaktion starten</button></div>
+            <?php endif; ?>
         </div>
 
-        <!-- Danger Zone: Spendenaktion zurücksetzen -->
-        <div class="danger-zone">
-            <h2><i class="fas fa-exclamation-triangle"></i> Spendenaktion zur&uuml;cksetzen</h2>
-            <p class="section-description">
-                Beim Zur&uuml;cksetzen der Spendenaktion wird der Bearbeitungsstand 
-                <strong>aller Kontakte</strong> auf den Ausgangszustand zur&uuml;ckgesetzt.
-            </p>
-
-            <div class="warning-box">
-                <strong>Achtung:</strong> Diese Aktion setzt den Status aller Kontakte 
-                auf &bdquo;Anfrage ausstehend&ldquo; (leer) zur&uuml;ck. Bisherige Ergebnisse und 
-                Kommentare bleiben erhalten, aber der Bearbeitungsstand geht verloren.
-                Dieser Schritt kann nicht r&uuml;ckg&auml;ngig gemacht werden.
-            </div>
-
-            <div class="actions">
-                <button type="button" class="btn btn-warning"  id="resetFundraisingBtn">
-                    <i class="fas fa-undo"></i> &nbsp;Spendenaktion zur&uuml;cksetzen
-                </button>
-            </div>
+        <?php if (!empty($campaignHistory)): ?>
+        <div class="fundraising-card">
+            <h2><i class="fas fa-clock-rotate-left"></i> Bisherige Spendenaktionen</h2>
+            <div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse"><thead><tr><th style="text-align:left;padding:9px;border-bottom:1px solid #e4e9ed">Name</th><th style="text-align:left;padding:9px;border-bottom:1px solid #e4e9ed">Beginn</th><th style="text-align:left;padding:9px;border-bottom:1px solid #e4e9ed">Ende</th><th style="text-align:left;padding:9px;border-bottom:1px solid #e4e9ed">Status</th></tr></thead><tbody>
+            <?php foreach ($campaignHistory as $campaign): ?>
+                <tr><td style="padding:9px;border-bottom:1px solid #edf0f2"><?php echo htmlspecialchars($campaign['name']); ?></td><td style="padding:9px;border-bottom:1px solid #edf0f2"><?php echo htmlspecialchars(date('d.m.Y', strtotime($campaign['started_at']))); ?></td><td style="padding:9px;border-bottom:1px solid #edf0f2"><?php echo $campaign['ended_at'] ? htmlspecialchars(date('d.m.Y', strtotime($campaign['ended_at']))) : '—'; ?></td><td style="padding:9px;border-bottom:1px solid #edf0f2"><?php echo $campaign['ended_at'] ? 'Beendet' : 'Aktiv'; ?></td></tr>
+            <?php endforeach; ?>
+            </tbody></table></div>
         </div>
+        <?php endif; ?>
 
         <!-- E-Mail-Vorlage -->
         <div class="fundraising-card">
@@ -481,49 +459,47 @@ $bulkAborted = isset($_GET['bulk_aborted']) && $_GET['bulk_aborted'] === '1';
     </div>
 
 <script>
-    // ----- Spendenaktion zurücksetzen -----
-    const resetBtn = document.getElementById('resetFundraisingBtn');
-    if (resetBtn) {
-        resetBtn.addEventListener('click', async function (e) {
+    // ----- Neue Spendenaktion starten: bisheriges Zurücksetzen inklusive -----
+    const startBtn = document.getElementById('startFundraisingBtn');
+    if (startBtn) {
+        startBtn.addEventListener('click', async function (e) {
             e.preventDefault();
-
-            const confirmed  = confirm(
-                'ACHTUNG\n\n' +
-                'Der Status ALLER Kontakte wird auf "Anfrage ausstehend" gesetzt. ' +
-                'Kommentare und Ergebnisse bleiben erhalten.\n\n' +
-                'Trotzdem fortfahren?'
-            );
-            if (!confirmed ) return;
-
-            resetBtn.disabled = true;
-            const originalHtml = resetBtn.innerHTML;
-            resetBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Wird zurückgesetzt…';
-
+            const name = (document.getElementById('fundraisingName')?.value || '').trim();
+            const confirmText = 'Eine neue Spendenaktion starten?\n\nDabei werden die Kontaktstatus und die zuletzt angeschrieben-Daten für eine neue Runde zurückgesetzt.';
+            if (!confirm(confirmText)) return;
+            startBtn.disabled = true;
+            const originalHtml = startBtn.innerHTML;
+            startBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Wird gestartet…';
             try {
                 const response = await fetch('reset_fundraising.php', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ action: 'reset' })
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'start', name })
                 });
                 const result = await response.json();
-
-                if (result.success) {
-                    alert(result.message);
-                    window.location.reload();
-                } else {
-                    alert('Fehler: ' + (result.error || 'Unbekannter Fehler'));
-                    resetBtn.disabled = false;
-                    resetBtn.innerHTML = originalHtml;
-                }
-            } catch (err) {
-                alert('Netzwerkfehler: ' + err.message);
-                resetBtn.disabled = false;
-                resetBtn.innerHTML = originalHtml;
-            }
+                if (result.success) { alert(result.message); window.location.reload(); }
+                else { alert('Fehler: ' + (result.error || 'Unbekannter Fehler')); startBtn.disabled = false; startBtn.innerHTML = originalHtml; }
+            } catch (err) { alert('Netzwerkfehler: ' + err.message); startBtn.disabled = false; startBtn.innerHTML = originalHtml; }
         });
     }
 
-        
+    // ----- Aktive Spendenaktion beenden -----
+    const endBtn = document.getElementById('endFundraisingBtn');
+    if (endBtn) {
+        endBtn.addEventListener('click', async function (e) {
+            e.preventDefault();
+            if (!confirm('Spendenaktion jetzt beenden? Das Enddatum wird gespeichert. Die Kontaktstatus werden nicht verändert.')) return;
+            endBtn.disabled = true;
+            const originalHtml = endBtn.innerHTML;
+            endBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Wird beendet…';
+            try {
+                const response = await fetch('end_fundraising.php', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'end' }) });
+                const result = await response.json();
+                if (result.success) { alert(result.message); window.location.reload(); }
+                else { alert('Fehler: ' + (result.error || 'Unbekannter Fehler')); endBtn.disabled = false; endBtn.innerHTML = originalHtml; }
+            } catch (err) { alert('Netzwerkfehler: ' + err.message); endBtn.disabled = false; endBtn.innerHTML = originalHtml; }
+        });
+    }
+
     // ----- Bulk-Mailversand vorbereiten -----
     const prepareBtn = document.getElementById('prepareBulkMailBtn');
     if (prepareBtn) {

@@ -53,3 +53,7 @@ Die angemeldeten Seiten verwenden einen gemeinsamen Seitenkopf (`app-page-header
 ### Projektfarben (aktualisiert am 16.10.2026)
 
 Vor der neuen Version einmalig `database/migrations/2026-10-16_03_project_colors.sql` in der bestehenden Förderverein-intern-Datenbank ausführen. Die Migration ergänzt eine Farbe für Projektvorlagen und konkrete Projekte. Neue Projekte übernehmen die Farbe ihrer Vorlage; eine Projektfarbe kann anschließend unabhängig am konkreten Projekt geändert werden.
+
+## Spendenaktion starten/beenden
+
+Vor dem Einsatz die Migration `database/migrations/2026-10-16_04_fundraising_campaigns.sql` ausführen. Unter „Spendenaktion verwalten“ kann eine neue Aktion mit optionalem Namen gestartet oder eine aktive Aktion beendet werden. Ohne Namen wird „Spendenaktion <Jahr>“ verwendet. Beim Start werden die Status der Nicht-Vorschlagskontakte auf „Handlungsbedarf“ gesetzt und `zuletzt_angeschrieben` geleert, damit das Dashboard die neue Runde zählt. Das Beenden speichert das Enddatum; das Dashboard zeigt dann „Aktuell läuft keine Spendenaktion.“
