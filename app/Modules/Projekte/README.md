@@ -3,7 +3,7 @@
 Der Einstiegspunkt `projects.php` bindet `Pages/index.php` ein. Das Modul ist durch die Berechtigung `ProjectManagement` serverseitig geschützt; der Vorlagen-Endpunkt für die Aufgaben-Vorschau liegt in derselben geschützten Seite.
 
 ## Enthaltene Funktionen
-- Projektübersicht mit Aufgaben nach Fälligkeit (überfällig, diese Woche, nächste Woche, später, ohne Fälligkeit)
+- Projektübersicht mit Aufgaben nach Fälligkeit (überfällig, diese Woche, nächste Woche und Demnächst (bis zum Beginn der fünften Kalenderwoche))
 - Veranstaltungstermine und allgemeine Projekte mit Start-/Enddatum
 - Geschäftsjahr August bis Juli
 - Editierbare Projektvorlagen mit eigenen, projektspezifischen Aufgaben und relativen Start- und Fälligkeits-Offsets

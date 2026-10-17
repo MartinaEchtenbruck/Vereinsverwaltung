@@ -16,7 +16,7 @@ checkPermission('view_contacts');
 $initialContactType = $_GET['contact_type'] ?? 'alle';
 if (!in_array($initialContactType, ['alle', 'Mail', 'Formular', 'Persönlich'], true)) $initialContactType = 'alle';
 $initialContactStatus = $_GET['contact_status'] ?? '';
-if (!in_array($initialContactStatus, ['', 'pending', 'action_needed'], true)) $initialContactStatus = '';
+if (!in_array($initialContactStatus, ['', 'pending', 'action_needed', 'promised', 'declined', 'waiting'], true)) $initialContactStatus = '';
 $excludeSuggestionsInitially = ($_GET['exclude_suggestions'] ?? '') === '1';
 ?>
 <!DOCTYPE html>
@@ -112,7 +112,7 @@ $excludeSuggestionsInitially = ($_GET['exclude_suggestions'] ?? '') === '1';
                     <label for="filterAnfrageAusstehend">Anfrage ausstehend</label>
                 </div>
                 <div class="filter-checkbox">
-                    <input type="checkbox" id="filterAntwort" <?= $initialContactStatus === '' ? 'checked' : '' ?>>
+                    <input type="checkbox" id="filterAntwort" <?= in_array($initialContactStatus, ['', 'waiting'], true) ? 'checked' : '' ?>>
                     <label for="filterAntwort">Antwort abwarten</label>
                 </div>
                 <div class="filter-checkbox">
@@ -120,11 +120,11 @@ $excludeSuggestionsInitially = ($_GET['exclude_suggestions'] ?? '') === '1';
                     <label for="filterHandlungsbedarf">Handlungsbedarf</label>
                 </div>
                 <div class="filter-checkbox">
-                    <input type="checkbox" id="filterZugesagt">
+                    <input type="checkbox" id="filterZugesagt" <?= $initialContactStatus === 'promised' ? 'checked' : '' ?>>
                     <label for="filterZugesagt">Spende zugesagt</label>
                 </div>
                 <div class="filter-checkbox">
-                    <input type="checkbox" id="filterAbgesagt">
+                    <input type="checkbox" id="filterAbgesagt" <?= $initialContactStatus === 'declined' ? 'checked' : '' ?>>
                     <label for="filterAbgesagt">Spende abgesagt</label>
                 </div>
             </div>
