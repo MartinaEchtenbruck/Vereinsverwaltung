@@ -82,7 +82,7 @@ if ($showProjectTasks) {
         FROM tasks t JOIN projects p ON p.id=t.project_id
         LEFT JOIN users u ON u.id=t.assigned_user_id
         WHERE p.status='active' AND t.status<>'done'
-        ORDER BY t.due_date IS NULL, t.due_date, t.id");
+        ORDER BY COALESCE(t.start_date, t.due_date), t.due_date, t.id");
     $dashboardTasks = $query->fetchAll(PDO::FETCH_ASSOC);
     $today = new DateTimeImmutable('today');
     $monday = new DateTimeImmutable('monday this week');
@@ -90,14 +90,26 @@ if ($showProjectTasks) {
     $afterNextMonday = $monday->modify('+2 weeks');
     $fourWeeks = $monday->modify('+4 weeks');
     foreach ($dashboardTasks as $task) {
-        // Wie in der Projektmanagement-Übersicht werden Aufgaben ohne Fälligkeit hier nicht angezeigt.
+        // Ohne Fälligkeit bleibt die Aufgabe außerhalb der Übersicht.
         if (!$task['due_date']) continue;
         $due = new DateTimeImmutable($task['due_date']);
-        if ($due < $today) $group = 'overdue';
-        elseif ($due < $nextMonday) $group = 'this_week';
-        elseif ($due < $afterNextMonday) $group = 'next_week';
-        elseif ($due < $fourWeeks) $group = 'demnaechst';
-        else continue;
+
+        // Eine abgelaufene Frist hat immer Vorrang vor dem Startdatum.
+        if ($due < $today) {
+            $group = 'overdue';
+        } else {
+            // Früher sichtbar machen: primär nach Arbeitsbeginn gruppieren.
+            // Bereits gestartete Aufgaben ohne überfällige Frist bleiben in "Diese Woche".
+            $start = !empty($task['start_date'])
+                ? new DateTimeImmutable($task['start_date'])
+                : $due;
+            if ($start < $today) $start = $today;
+
+            if ($start < $nextMonday) $group = 'this_week';
+            elseif ($start < $afterNextMonday) $group = 'next_week';
+            elseif ($start < $fourWeeks) $group = 'demnaechst';
+            else continue;
+        }
         $dashboardGroups[$group][] = $task;
     }
 }
@@ -128,7 +140,7 @@ $fundraisingProgress = $fundraisingStats['total'] > 0
         .fundraising-open-card:hover, .fundraising-open-card:focus-visible { background:#eef4f7; border-color:#b8cbd5; box-shadow:0 3px 10px rgba(28,45,60,.08); outline:2px solid transparent; }
         .fundraising-open-card:focus-visible { outline:2px solid #496779; outline-offset:2px; }
         .fundraising-widget-head { display:flex; justify-content:space-between; align-items:flex-start; gap:16px; margin-bottom:20px; }
-        .fundraising-widget-title { margin:0; color:#233746; font-size:1.25rem; font-weight:700; }
+        .fundraising-widget-title { margin:0; color:#233746; font-size:1.5rem; line-height:1.2; font-weight:700; }
         .fundraising-widget-subtitle { margin:6px 0 0; color:#6b7882; font-size:.9rem; }
         .fundraising-widget-link { flex-shrink:0; color:#496779; font-size:.9rem; font-weight:600; }
         .fundraising-widget-section-title { margin:0 0 12px; color:#51616c; font-size:.8rem; font-weight:700; letter-spacing:.06em; text-transform:uppercase; }
@@ -199,7 +211,7 @@ $fundraisingProgress = $fundraisingStats['total'] > 0
                 <section class="fundraising-widget" aria-label="Übersicht der aktuellen Spendenaktion">
                     <div class="fundraising-widget-head">
                         <div>
-                            <h2 class="fundraising-widget-title"><i class="fa-solid fa-hand-holding-heart" aria-hidden="true"></i> Spendenaktion</h2>
+                            <h2 class="fundraising-widget-title">Aktuelle Spendenaktion</h2>
                             <?php if ($activeFundraising): ?>
                                 <p class="fundraising-widget-subtitle"><?= dashboardEscape($activeFundraising['name']) ?> · gestartet am <?= dashboardEscape(date('d.m.Y', strtotime($activeFundraising['started_at']))) ?></p>
                             <?php else: ?>
