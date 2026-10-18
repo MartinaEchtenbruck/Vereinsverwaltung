@@ -115,11 +115,20 @@ class Utils {
             ? '<span class="suggestion-badge" title="Kontaktvorschlag">Vorschlag</span>' 
             : '';
         
+        const rawStatus = contact.Status || '';
+        const statusLabel = (!rawStatus || rawStatus === 'Anfrage ausstehend') ? 'Anfrage ausstehend' : rawStatus;
+        const statusClass = this.getStatusClass(rawStatus) || 'status-badge-default';
+        const statusBadge = `<span class="mobile-status-badge ${statusClass}">${statusLabel}</span>`;
+
         return `
             <div class="contact-info">
                 <div class="contact-name">${contact.Name} ${suggestionBadge}</div>
+                <div class="mobile-contact-address">${contact.anschrift || ''}</div>
                 ${contactDetail}
-                <span class="typ-badge ${typBadge.class}">${typBadge.text}</span>
+                <div class="mobile-contact-badges">
+                    <span class="typ-badge ${typBadge.class}">${typBadge.text}</span>
+                    ${statusBadge}
+                </div>
             </div>
         `;
     }

@@ -527,3 +527,104 @@ button, input[type="button"], input[type="submit"], .btn, .button { touch-action
     .app-navigation-links { grid-template-columns: minmax(0, 1fr); }
     .app-navigation-links .app-navigation-logout { grid-column: auto; }
 }
+
+/* Mobile-Ansicht der Sponsorenübersicht: Kontakte als Karten statt als breite Tabelle */
+@media (max-width: 700px) {
+    body { padding: 8px; }
+    .container { padding: 12px; border-radius: 8px; }
+    #contactsTable { display: block !important; width: 100%; border: 0; margin-top: 12px; }
+    #contactsTable thead { display: none; }
+    #contactsTable tbody { display: block; width: 100%; }
+    #contactsTable tbody > tr:not(.edit-row) {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+        gap: 0 12px;
+        position: relative;
+        width: 100%;
+        min-height: 190px;
+        margin: 0 0 14px;
+        padding: 12px 12px 38px;
+        border: 1px solid var(--border-color);
+        border-left: 4px solid var(--primary-color);
+        border-radius: 10px;
+        background: #fff;
+        box-shadow: 0 1px 4px rgba(0,0,0,.07);
+    }
+    #contactsTable tbody > tr:not(.edit-row):hover { background: #fff; }
+    #contactsTable tbody > tr:not(.edit-row) > td { display: block; min-width: 0; width: auto; padding: 5px 0; border: 0; overflow-wrap: anywhere; }
+    #contactsTable tbody > tr:not(.edit-row) > td:first-child { display: none; }
+    #contactsTable tbody > tr:not(.edit-row) > td:nth-child(2) {
+        grid-column: 1 / -1;
+        grid-row: 1;
+        padding: 0 82px 5px 0;
+        border-bottom: 0;
+        min-height: 0;
+        position: relative;
+    }
+    /* Trennlinie endet vor dem rechten Aktionsbereich und läuft nicht unter den Buttons weiter. */
+    #contactsTable tbody > tr:not(.edit-row) > td:nth-child(2)::after {
+        content: '';
+        position: absolute;
+        left: 0;
+        bottom: 0;
+        width: calc(100% - 82px);
+        border-bottom: 1px solid #e8e8e8;
+    }
+    #contactsTable .contact-info { display: flex; flex-direction: column; align-items: flex-start; gap: 1px; }
+    #contactsTable .contact-name { font-size: 1.08rem; font-weight: 700; line-height: 1.3; }
+    #contactsTable .mobile-contact-address { display: block; color: #4f5962; font-size: .9rem; line-height: 1.35; }
+    #contactsTable .mobile-contact-badges { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 1px; }
+    #contactsTable .typ-badge { margin-top: 0; }
+    /* Anschrift steht bereits im eigenen mobilen Feld; die Tabellen-Detailadresse wird ausgeblendet. */
+    #contactsTable .contact-address { display: none; }
+    #contactsTable .mobile-status-badge { display: inline-flex; align-items: center; max-width: 100%; padding: 3px 8px; border-radius: 5px; font-size: .76rem; line-height: 1.35; font-weight: 600; overflow-wrap: anywhere; }
+    #contactsTable .mobile-status-badge.status-zugesagt { color: #176b38; background: rgba(46, 204, 113, .18); }
+    #contactsTable .mobile-status-badge.status-handlungsbedarf { color: #805400; background: rgba(243, 156, 18, .2); }
+    #contactsTable .mobile-status-badge.status-abgesagt { color: #9f2820; background: rgba(231, 76, 60, .16); }
+    #contactsTable .mobile-status-badge.status-anfrage-ausstehend,
+    #contactsTable .mobile-status-badge.status-badge-default { color: #4f5962; background: rgba(149, 165, 166, .2); }
+    /* Status wird mobil als farbiger Badge gezeigt, nicht als Dropdown. */
+    #contactsTable tbody > tr:not(.edit-row) > td:nth-child(3) { display: none; }
+    /* Kommentar mobil ausblenden; Reihenfolge: letztes Ergebnis, danach Anfragedatum. */
+    #contactsTable tbody > tr:not(.edit-row) > td:nth-child(5) { display: none; }
+    #contactsTable tbody > tr:not(.edit-row) > td.mobile-result-cell.has-result {
+        grid-column: 1 / -1;
+        grid-row: 2;
+        padding: 7px 0 0 0;
+        background: transparent;
+        border-radius: 0;
+        font-size: .88rem;
+        line-height: 1.4;
+        margin-top: 7px;
+        /* Ergebnistext nutzt die gesamte Innenbreite des Items; linker Rand wie bei Name und Anschrift. */
+        width: calc(100% + 70px);
+        box-sizing: border-box;
+    }
+    #contactsTable tbody > tr:not(.edit-row) > td.mobile-result-cell.has-result::before { content: 'Letztes Ergebnis: '; font-weight: 600; }
+    #contactsTable tbody > tr:not(.edit-row) > td.mobile-result-cell.no-result { display: none; }
+    #contactsTable tbody > tr:not(.edit-row) > td:nth-child(4) {
+        grid-column: 1 / -1;
+        grid-row: 3;
+        align-self: end;
+        font-size: .85rem;
+        color: #4f5962;
+        padding: 5px 0 2px 0;
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: 8px;
+    }
+    #contactsTable tbody > tr:not(.edit-row) > td:nth-child(4)::before { content: 'Zuletzt angefragt: '; font-weight: 600; color: #303840; }
+    #contactsTable tbody > tr:not(.edit-row) > td:nth-child(7) { position: absolute; top: 12px; right: 10px; padding: 0; }
+    #contactsTable .actions-column { display: flex; flex-direction: column; align-items: center; gap: 5px; }
+    #contactsTable .actions-column .btn { width: 38px; height: 36px; min-width: 38px; padding: 6px; margin: 0; display: inline-flex; align-items: center; justify-content: center; }
+    #contactsTable .edit-row { display: block; }
+    #contactsTable .edit-row > td { display: block; width: 100%; padding: 8px; }
+    .search-filter-container, .filter-container { align-items: stretch; }
+    .search-input, .filter-select { width: 100%; min-width: 0; }
+    .filter-group { flex-wrap: wrap; }
+}
+
+@media (min-width: 701px) {
+    #contactsTable .mobile-contact-address { display: none; }
+}

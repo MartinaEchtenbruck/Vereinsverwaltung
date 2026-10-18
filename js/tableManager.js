@@ -59,7 +59,7 @@ class TableManager {
                     </td>
                     <td>${Utils.formatDateForDisplay(contact.Zuletzt_angeschrieben)}</td>
                     <td>${contact.Kommentar || ''}</td>
-                    <td>${contact.Letztes_Ergebnis || ''}</td>
+                    <td class="mobile-result-cell ${(contact.Letztes_Ergebnis || '').toString().trim() ? 'has-result' : 'no-result'}">${contact.Letztes_Ergebnis || ''}</td>
                     <td>${Utils.generateActionButtonsHTML(contact)}</td>
                 </tr>
                 ${isEditing ? this.generateEditFormHTML(contact) : ''}
