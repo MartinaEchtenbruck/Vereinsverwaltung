@@ -170,6 +170,14 @@ $fundraisingProgress = $fundraisingStats['total'] > 0
         @media (max-width:680px) { .fundraising-widget { padding:18px; } .fundraising-widget-head { flex-direction:column; } .fundraising-open-grid { grid-template-columns:repeat(2,minmax(0,1fr)); } .fundraising-result.total { grid-template-columns:minmax(0,1fr); } .fundraising-result-breakdown { grid-template-columns:repeat(3,minmax(0,1fr)); } .fundraising-result-breakdown .fundraising-result { padding:10px 8px; } }
         @media (max-width:460px) { .fundraising-result-breakdown { grid-template-columns:minmax(0,1fr); } }
     </style>
+
+    <link rel="icon" type="image/png" sizes="32x32" href="/intern/assets/icons/favicon.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/intern/assets/icons/apple-touch-icon.png">
+    <link rel="manifest" href="/intern/manifest.webmanifest">
+    <meta name="apple-mobile-web-app-title" content="Förderverein intern">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="theme-color" content="#FFF500">
 </head>
 <body>
     <div class="container">

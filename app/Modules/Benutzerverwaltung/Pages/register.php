@@ -399,6 +399,14 @@ function sendAdminNotification($username, $email, $full_name, $comment) {
             }
         }
     </style>
+
+    <link rel="icon" type="image/png" sizes="32x32" href="/intern/assets/icons/favicon.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/intern/assets/icons/apple-touch-icon.png">
+    <link rel="manifest" href="/intern/manifest.webmanifest">
+    <meta name="apple-mobile-web-app-title" content="Förderverein intern">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="theme-color" content="#FFF500">
 </head>
 <body>
     <div class="register-container">

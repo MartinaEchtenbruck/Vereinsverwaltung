@@ -99,11 +99,42 @@ $view=(string)($_GET['view']??'overview');$pid=(int)($_GET['id']??0);if(isset($_
 $templates=$conn->query('SELECT * FROM project_templates WHERE is_active=1 ORDER BY name')->fetchAll(PDO::FETCH_ASSOC);$taskTemplates=$conn->query('SELECT * FROM task_templates WHERE is_active=1 ORDER BY sort_order,title')->fetchAll(PDO::FETCH_ASSOC);$editTemplate=null;$editTemplateTasks=[];if($view==='edit_template'&&$pid){$q=$conn->prepare('SELECT * FROM project_templates WHERE id=? AND is_active=1');$q->execute([$pid]);$editTemplate=$q->fetch(PDO::FETCH_ASSOC);if($editTemplate){$q=$conn->prepare('SELECT * FROM project_template_task_items WHERE project_template_id=? AND is_active=1 ORDER BY sort_order,id');$q->execute([$pid]);$editTemplateTasks=$q->fetchAll(PDO::FETCH_ASSOC);}else{$errors[]='Projektvorlage nicht gefunden.';$view='templates';}}
 $projects=$conn->query("SELECT p.*, (SELECT COUNT(*) FROM tasks t WHERE t.project_id=p.id) task_count,(SELECT COUNT(*) FROM tasks t WHERE t.project_id=p.id AND t.status='done') done_count FROM projects p WHERE p.status<>'archived' ORDER BY CASE WHEN p.status='active' THEN 0 ELSE 1 END,COALESCE(p.event_date,p.start_date) DESC,p.id DESC")->fetchAll(PDO::FETCH_ASSOC);
 $tasks=$conn->query("SELECT t.*,p.title project_title,p.color project_color,u.full_name assignee FROM tasks t JOIN projects p ON p.id=t.project_id LEFT JOIN users u ON u.id=t.assigned_user_id WHERE p.status='active' AND t.status<>'done' ORDER BY t.due_date IS NULL,t.due_date,t.id")->fetchAll(PDO::FETCH_ASSOC);
-$groups=['overdue'=>[],'this_week'=>[],'next_week'=>[],'demnaechst'=>[]];$today=new DateTimeImmutable('today');$mon=new DateTimeImmutable('monday this week');$next=$mon->modify('+1 week');$after=$mon->modify('+2 weeks');$fourWeeks=$mon->modify('+4 weeks');foreach($tasks as $t){if(!$t['due_date'])continue;$d=new DateTimeImmutable($t['due_date']);if($d<$today)$g='overdue';elseif($d<$next)$g='this_week';elseif($d<$after)$g='next_week';elseif($d<$fourWeeks)$g='demnaechst';else continue;$groups[$g][]=$t;}
+$groups=['overdue'=>[],'this_week'=>[],'next_week'=>[],'demnaechst'=>[]];
+$today=new DateTimeImmutable('today');
+$mon=new DateTimeImmutable('monday this week');
+$next=$mon->modify('+1 week');
+$after=$mon->modify('+2 weeks');
+$fourWeeks=$mon->modify('+4 weeks');
+foreach($tasks as $t){
+    // Ohne Fälligkeit bleibt die Aufgabe außerhalb der Übersicht.
+    if(!$t['due_date']) continue;
+    $due=new DateTimeImmutable($t['due_date']);
+    // Eine abgelaufene Frist hat immer Vorrang vor dem Startdatum.
+    if($due<$today){
+        $g='overdue';
+    }else{
+        // Primär nach Arbeitsbeginn gruppieren, damit länger laufende Aufgaben früh sichtbar sind.
+        $start=!empty($t['start_date']) ? new DateTimeImmutable($t['start_date']) : $due;
+        if($start<$today) $start=$today;
+        if($start<$next) $g='this_week';
+        elseif($start<$after) $g='next_week';
+        elseif($start<$fourWeeks) $g='demnaechst';
+        else continue;
+    }
+    $groups[$g][]=$t;
+}
 $taskDetail=null;$taskDetailComments=[];if($view==='task'&&$pid){$q=$conn->prepare("SELECT t.*,p.title project_title,p.id project_id,p.color project_color,p.project_type,p.event_date,p.start_date project_start_date,u.full_name assignee FROM tasks t JOIN projects p ON p.id=t.project_id LEFT JOIN users u ON u.id=t.assigned_user_id WHERE t.id=?");$q->execute([$pid]);$taskDetail=$q->fetch(PDO::FETCH_ASSOC);if(!$taskDetail){$errors[]='Aufgabe nicht gefunden.';$view='overview';}else{$q=$conn->prepare("SELECT c.*,u.full_name,u.username FROM task_comments c JOIN users u ON u.id=c.user_id WHERE c.task_id=? ORDER BY c.created_at");$q->execute([$pid]);$taskDetailComments=$q->fetchAll(PDO::FETCH_ASSOC);}}
 $project=null;$projectTasks=[];$comments=[];$openSiblingCount=0;if($view==='project'&&$pid){$q=$conn->prepare('SELECT * FROM projects WHERE id=?');$q->execute([$pid]);$project=$q->fetch(PDO::FETCH_ASSOC);if(!$project){$errors[]='Projekt nicht gefunden.';$view='overview';}else{if(!empty($project['template_id'])){$q=$conn->prepare("SELECT COUNT(*) FROM projects WHERE template_id=? AND id<>? AND status='active'");$q->execute([(int)$project['template_id'],$pid]);$openSiblingCount=(int)$q->fetchColumn();}$q=$conn->prepare("SELECT t.*,u.full_name assignee FROM tasks t LEFT JOIN users u ON u.id=t.assigned_user_id WHERE t.project_id=? ORDER BY CASE t.status WHEN 'open' THEN 0 WHEN 'in_progress' THEN 1 ELSE 2 END,t.due_date IS NULL,t.due_date,t.sort_order,t.id");$q->execute([$pid]);$projectTasks=$q->fetchAll(PDO::FETCH_ASSOC);if($projectTasks){$ids=array_column($projectTasks,'id');$in=implode(',',array_fill(0,count($ids),'?'));$q=$conn->prepare("SELECT c.*,u.full_name,u.username FROM task_comments c JOIN users u ON u.id=c.user_id WHERE c.task_id IN ($in) ORDER BY c.created_at");$q->execute($ids);foreach($q->fetchAll(PDO::FETCH_ASSOC) as $c)$comments[$c['task_id']][]=$c;}}}
 ?>
-<!DOCTYPE html><html lang="de"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Projektmanagement – Förderverein intern</title><link rel="stylesheet" href="styles.css"><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"><link rel="stylesheet" href="includes/navigation.css"><link rel="stylesheet" href="project-management.css"></head><body><div class="container"><header class="app-page-header"><h1>Projektmanagement</h1><?php require $appRoot.'/includes/navigation.php'; ?></header><main class="pm-main">
+<!DOCTYPE html><html lang="de"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Projektmanagement – Förderverein intern</title><link rel="stylesheet" href="styles.css"><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"><link rel="stylesheet" href="includes/navigation.css"><link rel="stylesheet" href="project-management.css">
+    <link rel="icon" type="image/png" sizes="32x32" href="/intern/assets/icons/favicon.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/intern/assets/icons/apple-touch-icon.png">
+    <link rel="manifest" href="/intern/manifest.webmanifest">
+    <meta name="apple-mobile-web-app-title" content="Förderverein intern">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="theme-color" content="#FFF500">
+</head><body><div class="container"><header class="app-page-header"><h1>Projektmanagement</h1><?php require $appRoot.'/includes/navigation.php'; ?></header><main class="pm-main">
 <?php if($notice):?><div class="pm-alert pm-success"><?=pmh($notice)?></div><?php endif;foreach($errors as $e):?><div class="pm-alert pm-error"><?=pmh($e)?></div><?php endforeach;?>
 <nav class="pm-tabs"><a class="<?=$view==='overview'?'active':''?>" href="projects.php"><i class="fa-solid fa-list-check"></i> Aufgabenübersicht</a><a class="<?=$view==='new'?'active':''?>" href="projects.php?view=new"><i class="fa-solid fa-plus"></i> Projekt anlegen</a><a class="<?=$view==='templates'?'active':''?>" href="projects.php?view=templates"><i class="fa-solid fa-layer-group"></i> Vorlagen</a></nav>
 <?php if($view==='overview'):?>
