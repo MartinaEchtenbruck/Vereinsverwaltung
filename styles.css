@@ -466,3 +466,64 @@ th:nth-child(2) { /* Name-Spalte */
 .btn-save {
     background-color: var(--primary-color);
 }
+
+/* ===== Mobile-Optimierung ===== */
+html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+img, video, canvas, svg { max-width: 100%; }
+input, select, textarea, button { font: inherit; }
+button, input[type="button"], input[type="submit"], .btn, .button { touch-action: manipulation; }
+
+@media (max-width: 760px) {
+    body { padding: 8px; font-size: 15px; }
+    .container { width: 100%; max-width: none; padding: 14px; border-radius: 10px; }
+    h1 { font-size: 1.45rem; line-height: 1.25; overflow-wrap: anywhere; }
+    h2 { font-size: 1.2rem; }
+    h3 { font-size: 1.05rem; }
+
+    /* Bedienelemente lassen sich auf Touchscreens gut treffen. */
+    button, .btn, .button, input[type="submit"], input[type="button"], .btn-save, .btn-cancel {
+        min-height: 42px;
+        max-width: 100%;
+    }
+    input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]),
+    select, textarea { max-width: 100%; min-width: 0; }
+    input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]), select, textarea {
+        width: 100%; padding: 10px; font-size: 16px; /* verhindert iOS-Zoom beim Fokus */
+    }
+    input[type="checkbox"], input[type="radio"] { width: 20px; height: 20px; flex: 0 0 auto; }
+
+    .search-filter-container, .filter-container, .filter-group {
+        align-items: stretch; flex-direction: column; gap: 10px;
+    }
+    .search-input, .filter-select { width: 100%; min-width: 0; }
+    .filter-checkbox { align-items: center; }
+
+    /* Breite Tabellen bleiben horizontal scrollbar, statt das Layout aufzubrechen. */
+    table { display: block; width: 100%; max-width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    table th, table td { padding: 9px 10px; }
+    th:nth-child(2) { min-width: 130px; width: auto; }
+    .status-column { min-width: 130px; }
+    .actions-header { min-width: 120px; width: auto; }
+
+    .app-page-header { grid-template-columns: minmax(0, 1fr); gap: 12px; margin-bottom: 16px; }
+    .app-navigation { text-align: left; }
+    .app-navigation-user { overflow-wrap: anywhere; }
+    .app-navigation-links { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+    .app-navigation-links a { display: flex; align-items: center; gap: 7px; white-space: normal; overflow-wrap: anywhere; padding: 8px 9px; border: 1px solid #e5e9ec; border-radius: 7px; background: #fff; }
+    .app-navigation-links .app-navigation-logout { grid-column: 1 / -1; }
+
+    .modal, .modal-content { max-width: calc(100vw - 20px); }
+    .modal-content { width: 100%; margin: 10px auto; padding: 16px; }
+    .modal-buttons, .edit-buttons { flex-wrap: wrap; justify-content: stretch; gap: 8px; }
+    .modal-buttons button, .edit-buttons button { flex: 1 1 120px; margin: 0; }
+    .edit-form { padding: 14px; }
+    .contact-info { overflow-wrap: anywhere; }
+}
+
+@media (max-width: 420px) {
+    body { padding: 5px; }
+    .container { padding: 10px; }
+    h1 { font-size: 1.3rem; }
+    .app-navigation-links { grid-template-columns: minmax(0, 1fr); }
+    .app-navigation-links .app-navigation-logout { grid-column: auto; }
+}

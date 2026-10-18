@@ -141,3 +141,28 @@
   display: inline-block; visibility: visible; opacity: 1;
   font-family: Arial, sans-serif; font-weight: 700; line-height: 1;
 }
+
+/* ===== Mobile-Optimierung Projektmanagement ===== */
+@media (max-width: 760px) {
+    .pm-main { padding-bottom: 24px; }
+    .pm-tabs { gap: 6px; margin-bottom: 14px; }
+    .pm-tabs a { padding: 9px 10px; }
+    .pm-section { padding: 14px; margin-bottom: 14px; border-radius: 10px; }
+    .pm-section-heading { flex-direction: column; gap: 10px; }
+    .pm-week-grid, .pm-project-grid { grid-template-columns: minmax(0, 1fr); gap: 10px; }
+    .pm-week-column h3 { padding: 10px; }
+    .pm-task-row { padding: 11px; }
+    .pm-card-top { align-items: flex-start; }
+    .pm-button { min-height: 42px; padding: 10px 12px; }
+    .pm-form { gap: 11px; }
+    .pm-form label { min-width: 0; }
+    .pm-form input, .pm-form select, .pm-form textarea { width: 100%; min-width: 0; }
+    .pm-form-actions, .pm-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+    .pm-form-actions > *, .pm-actions > * { flex: 1 1 130px; }
+}
+
+@media (max-width: 420px) {
+    .pm-section { padding: 11px; }
+    .pm-tabs a { font-size: 14px; }
+    .pm-project-card { padding: 13px; }
+}

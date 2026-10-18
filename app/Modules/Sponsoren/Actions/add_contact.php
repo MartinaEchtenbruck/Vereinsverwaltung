@@ -63,9 +63,9 @@ try {
     
     // SQL Query
     $query = "INSERT INTO contacts 
-              (primary_key, name, anrede, webseite, emailadresse, typ, formular_link, anschrift, status, is_suggestion, created_at, updated_at) 
+              (primary_key, name, anrede, webseite, emailadresse, typ, formular_link, anschrift, is_suggestion, created_at, updated_at) 
               VALUES 
-              (:primary_key, :name, :anrede, :webseite, :emailadresse, :typ, :formular_link, :anschrift, :status, :is_suggestion, NOW(), NOW())";
+              (:primary_key, :name, :anrede, :webseite, :emailadresse, :typ, :formular_link, :anschrift, :is_suggestion, NOW(), NOW())";
     
     $stmt = $conn->prepare($query);
     $success = $stmt->execute([
@@ -77,7 +77,6 @@ try {
         ':typ' => $data['typ'],
         ':formular_link' => $data['formular_link'] ?? '',
         ':anschrift' => $data['anschrift'] ?? '',
-        ':status' => '', // Neue Kontakte starten immer mit leerem Status (Anzeige: „Anfrage ausstehend“).
         ':is_suggestion' => $is_suggestion
     ]);
     
