@@ -78,11 +78,16 @@ if ($showProjectTasks) {
     $dashboardDb->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
     if (empty($_SESSION['pm_csrf'])) $_SESSION['pm_csrf'] = bin2hex(random_bytes(32));
     $dashboardCsrf = $_SESSION['pm_csrf'];
-    $query = $dashboardDb->query("SELECT t.*, p.title AS project_title, p.color AS project_color, u.full_name AS assignee
+    $query = $dashboardDb->query("SELECT t.id, t.title, t.start_date, t.due_date, t.status, t.assigned_user_id, p.title AS project_title, p.color AS project_color, u.full_name AS assignee, 0 AS is_standalone
         FROM tasks t JOIN projects p ON p.id=t.project_id
         LEFT JOIN users u ON u.id=t.assigned_user_id
         WHERE p.status='active' AND t.status<>'done'
-        ORDER BY COALESCE(t.start_date, t.due_date), t.due_date, t.id");
+        UNION ALL
+        SELECT s.id, s.title, s.start_date, s.due_date, s.status, s.assigned_user_id, NULL AS project_title, '#DCEAF0' AS project_color, u.full_name AS assignee, 1 AS is_standalone
+        FROM standalone_tasks s
+        LEFT JOIN users u ON u.id=s.assigned_user_id
+        WHERE s.status<>'done'
+        ORDER BY due_date, id");
     $dashboardTasks = $query->fetchAll(PDO::FETCH_ASSOC);
     $today = new DateTimeImmutable('today');
     $monday = new DateTimeImmutable('monday this week');
@@ -196,17 +201,18 @@ $fundraisingProgress = $fundraisingStats['total'] > 0
                                 <h3><?= dashboardEscape($groupLabel) ?><span><?= count($dashboardGroups[$groupKey]) ?></span></h3>
                                 <?php if (!$dashboardGroups[$groupKey]): ?><p class="pm-empty">Keine Aufgaben</p>
                                 <?php else: foreach ($dashboardGroups[$groupKey] as $task): $taskColor = dashboardColor($task['project_color'] ?? null); ?>
-                                    <article class="pm-task-row pm-task-tile" style="--project-color:<?= dashboardEscape($taskColor) ?>" data-task-url="projects.php?view=task&amp;id=<?= (int)$task['id'] ?>" tabindex="0" role="link" aria-label="Aufgabe öffnen: <?= dashboardEscape($task['title']) ?>">
-                                        <a class="pm-task-title" href="projects.php?view=task&amp;id=<?= (int)$task['id'] ?>"><?= dashboardEscape($task['title']) ?></a>
-                                        <div class="pm-task-project"><?= dashboardEscape($task['project_title']) ?></div>
+                                    <?php $isStandalone = !empty($task['is_standalone']); $taskUrl = $isStandalone ? 'projects.php?view=standalone' : 'projects.php?view=task&amp;id=' . (int)$task['id']; $statusAction = $isStandalone ? 'set_standalone_task_status' : 'set_task_status'; $idField = $isStandalone ? 'standalone_task_id' : 'task_id'; ?>
+                                    <article class="pm-task-row pm-task-tile" style="--project-color:<?= dashboardEscape($taskColor) ?>" data-task-url="<?= $taskUrl ?>" tabindex="0" role="link" aria-label="Aufgabe öffnen: <?= dashboardEscape($task['title']) ?>">
+                                        <a class="pm-task-title" href="<?= $taskUrl ?>"><?= dashboardEscape($task['title']) ?></a>
+                                        <div class="pm-task-project"><?= $isStandalone ? 'Projektunabhängige Aufgabe' : dashboardEscape($task['project_title']) ?></div>
                                         <?php if (!empty($task['assignee'])): ?><div class="pm-task-meta"><span class="pm-assignee">Übernommen: <?= dashboardEscape($task['assignee']) ?></span></div><?php endif; ?>
                                         <div class="pm-task-status-actions" aria-label="Aufgabenstatus ändern">
                                             <?php if ($task['status'] !== 'in_progress'): ?>
-                                                <form method="post" action="projects.php"><input type="hidden" name="csrf_token" value="<?= dashboardEscape($dashboardCsrf) ?>"><input type="hidden" name="action" value="set_task_status"><input type="hidden" name="task_id" value="<?= (int)$task['id'] ?>"><input type="hidden" name="status" value="in_progress"><input type="hidden" name="return_to" value="dashboard"><button class="pm-icon-button pm-icon-progress" type="submit" title="Als in Bearbeitung markieren" aria-label="Als in Bearbeitung markieren"><i class="fa-solid fa-play"></i></button></form>
+                                                <form method="post" action="projects.php"><input type="hidden" name="csrf_token" value="<?= dashboardEscape($dashboardCsrf) ?>"><input type="hidden" name="action" value="<?= $statusAction ?>"><input type="hidden" name="<?= $idField ?>" value="<?= (int)$task['id'] ?>"><input type="hidden" name="status" value="in_progress"><input type="hidden" name="return_to" value="dashboard"><button class="pm-icon-button pm-icon-progress" type="submit" title="Als in Bearbeitung markieren" aria-label="Als in Bearbeitung markieren"><i class="fa-solid fa-play"></i></button></form>
                                             <?php else: ?>
-                                                <form method="post" action="projects.php"><input type="hidden" name="csrf_token" value="<?= dashboardEscape($dashboardCsrf) ?>"><input type="hidden" name="action" value="set_task_status"><input type="hidden" name="task_id" value="<?= (int)$task['id'] ?>"><input type="hidden" name="status" value="open"><input type="hidden" name="return_to" value="dashboard"><button class="pm-icon-button pm-icon-open" type="submit" title="Wieder auf offen setzen" aria-label="Wieder auf offen setzen"><i class="fa-solid fa-rotate-left"></i></button></form>
+                                                <form method="post" action="projects.php"><input type="hidden" name="csrf_token" value="<?= dashboardEscape($dashboardCsrf) ?>"><input type="hidden" name="action" value="<?= $statusAction ?>"><input type="hidden" name="<?= $idField ?>" value="<?= (int)$task['id'] ?>"><input type="hidden" name="status" value="open"><input type="hidden" name="return_to" value="dashboard"><button class="pm-icon-button pm-icon-open" type="submit" title="Wieder auf offen setzen" aria-label="Wieder auf offen setzen"><i class="fa-solid fa-rotate-left"></i></button></form>
                                             <?php endif; ?>
-                                            <form method="post" action="projects.php"><input type="hidden" name="csrf_token" value="<?= dashboardEscape($dashboardCsrf) ?>"><input type="hidden" name="action" value="set_task_status"><input type="hidden" name="task_id" value="<?= (int)$task['id'] ?>"><input type="hidden" name="status" value="done"><input type="hidden" name="return_to" value="dashboard"><button class="pm-icon-button pm-icon-done" type="submit" title="Als erledigt markieren" aria-label="Als erledigt markieren"><i class="fa-regular fa-square-check"></i></button></form>
+                                            <form method="post" action="projects.php"><input type="hidden" name="csrf_token" value="<?= dashboardEscape($dashboardCsrf) ?>"><input type="hidden" name="action" value="<?= $statusAction ?>"><input type="hidden" name="<?= $idField ?>" value="<?= (int)$task['id'] ?>"><input type="hidden" name="status" value="done"><input type="hidden" name="return_to" value="dashboard"><button class="pm-icon-button pm-icon-done" type="submit" title="Als erledigt markieren" aria-label="Als erledigt markieren"><i class="fa-regular fa-square-check"></i></button></form>
                                         </div>
                                     </article>
                                 <?php endforeach; endif; ?>
