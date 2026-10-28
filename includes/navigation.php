@@ -34,6 +34,12 @@ foreach ($visibleItems as $item) {
         <button class="app-navigation-toggle" type="button" aria-expanded="false" aria-controls="app-navigation-menu">
             <i class="fas fa-bars" aria-hidden="true"></i><span>Menü</span>
         </button>
+        <div class="app-navigation-actions">
+            <a class="app-navigation-notifications" href="notifications.php" aria-label="Benachrichtigungen" title="Benachrichtigungen">
+                <i class="fas fa-bell" aria-hidden="true"></i>
+                <span class="app-navigation-notifications-label">Benachrichtigungen</span>
+            </a>
+        </div>
         <div class="app-navigation-user">
             <span class="app-navigation-user-name"><i class="fas fa-user-circle" aria-hidden="true"></i> <?= htmlspecialchars((string) $currentUserName, ENT_QUOTES, 'UTF-8') ?></span>
             <?php if ($currentUserRole !== null && $currentUserRole !== false && $currentUserRole !== ''): ?>

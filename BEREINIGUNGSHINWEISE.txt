@@ -1,0 +1,23 @@
+Bereinigter Quellstand – 28.10.2026
+
+Bereinigt wurde ausschließlich die versehentlich mehrfach abgelegte Spiegelkopie im Ordner includes/.
+Beibehalten wurden die zentral benötigten Dateien:
+- includes/navigation.php
+- includes/navigation.css
+
+Die Anwendung verwendet die übrigen Dateien aus dem Projektstamm:
+- app/
+- assets/
+- config/
+- database/
+- docs/
+- js/
+sowie die PHP-Einstiegspunkte im Projektstamm.
+
+Die zuvor mehrfach vorhandenen Kopien unter includes/app/, includes/assets/, includes/config/,
+includes/database/, includes/docs/, includes/js/, includes/includes/ und die dort duplizierten
+PHP-Einstiegspunkte wurden aus diesem bereinigten Paket entfernt. Die Originale im Projektstamm
+wurden nicht gelöscht oder inhaltlich verändert.
+
+Vor dem produktiven Ersetzen empfiehlt sich weiterhin eine Sicherung des bestehenden Webverzeichnisses
+und ein Funktionstest der zentralen Bereiche.

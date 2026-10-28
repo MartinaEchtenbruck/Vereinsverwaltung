@@ -54,6 +54,39 @@
     background: #f0f4f5;
     color: #53636c;
 }
+
+.app-navigation-actions {
+    display: flex;
+    align-items: center;
+    flex: 0 0 auto;
+}
+.app-navigation-notifications {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-width: 42px;
+    min-height: 42px;
+    padding: 9px 11px;
+    border: 1px solid #e0e7e9;
+    border-radius: 10px;
+    background: #f8fafb;
+    color: #344f5b;
+    text-decoration: none;
+    font-size: 15px;
+    transition: background .15s ease, border-color .15s ease;
+}
+.app-navigation-notifications:hover,
+.app-navigation-notifications:focus-visible {
+    background: #eef4f6;
+    border-color: #cbdadd;
+    outline-offset: 2px;
+}
+.app-navigation-notifications > i { color: #577c8b; }
+.app-navigation-notifications-label { font-size: 12px; font-weight: 600; }
+.app-navigation-notifications.is-active { background: #e8f1f4; border-color: #c9dce2; }
+
 .app-navigation-logout {
     display: inline-flex;
     align-items: center;
@@ -178,6 +211,8 @@
         font-weight: 600;
         cursor: pointer;
     }
+    .app-navigation-actions { margin-left: auto; }
+    .app-navigation-notifications { min-height: 40px; }
     .app-navigation-user { width: 100%; justify-content: flex-start; flex-wrap: wrap; margin-left: 0; }
     .app-navigation-menu { display: none; flex-direction: column; align-items: stretch; gap: 4px; padding: 8px; }
     .app-navigation.menu-open .app-navigation-menu { display: flex; }
@@ -199,6 +234,7 @@
     .app-page-header { gap: 14px; }
 }
 @media (max-width: 420px) {
+    .app-navigation-notifications-label { display: none; }
     .app-navigation-user { font-size: 11px; }
     .app-navigation-role { display: none; }
     .app-navigation-logout { margin-left: auto; }
