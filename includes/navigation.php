@@ -7,6 +7,8 @@ $navigationItems = require __DIR__ . '/../config/navigation.php';
 $currentPage = basename(parse_url($_SERVER['SCRIPT_NAME'] ?? '', PHP_URL_PATH) ?: '');
 $currentUserName = $_SESSION['full_name'] ?? $_SESSION['username'] ?? 'Benutzer';
 $currentUserRole = getUserRole();
+// Wird beim Ausbau des Benachrichtigungssystems durch die echte Anzahl ersetzt.
+$unreadNotificationCount = 0;
 
 $visibleItems = [];
 foreach ($navigationItems as $item) {
@@ -34,14 +36,12 @@ foreach ($visibleItems as $item) {
         <button class="app-navigation-toggle" type="button" aria-expanded="false" aria-controls="app-navigation-menu">
             <i class="fas fa-bars" aria-hidden="true"></i><span>Menü</span>
         </button>
-        <div class="app-navigation-actions">
-            <a class="app-navigation-notifications" href="notifications.php" aria-label="Benachrichtigungen" title="Benachrichtigungen">
-                <i class="fas fa-bell" aria-hidden="true"></i>
-                <span class="app-navigation-notifications-label">Benachrichtigungen</span>
-            </a>
-        </div>
         <div class="app-navigation-user">
             <span class="app-navigation-user-name"><i class="fas fa-user-circle" aria-hidden="true"></i> <?= htmlspecialchars((string) $currentUserName, ENT_QUOTES, 'UTF-8') ?></span>
+            <a class="app-navigation-notifications<?= $currentPage === 'notifications.php' ? ' is-active' : '' ?><?= $unreadNotificationCount > 0 ? ' has-unread' : '' ?>" href="notifications.php" aria-label="Benachrichtigungen<?= $unreadNotificationCount > 0 ? ', ' . $unreadNotificationCount . ' ungelesen' : '' ?>" title="Benachrichtigungen">
+                <i class="fas fa-bell" aria-hidden="true"></i>
+                <?php if ($unreadNotificationCount > 0): ?><span class="app-navigation-notifications-count"><?= (int) $unreadNotificationCount ?></span><?php endif; ?>
+            </a>
             <?php if ($currentUserRole !== null && $currentUserRole !== false && $currentUserRole !== ''): ?>
                 <span class="app-navigation-role"><?= htmlspecialchars((string) $currentUserRole, ENT_QUOTES, 'UTF-8') ?></span>
             <?php endif; ?>
