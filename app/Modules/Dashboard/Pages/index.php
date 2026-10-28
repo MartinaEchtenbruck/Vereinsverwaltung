@@ -201,7 +201,7 @@ $fundraisingProgress = $fundraisingStats['total'] > 0
                                 <h3><?= dashboardEscape($groupLabel) ?><span><?= count($dashboardGroups[$groupKey]) ?></span></h3>
                                 <?php if (!$dashboardGroups[$groupKey]): ?><p class="pm-empty">Keine Aufgaben</p>
                                 <?php else: foreach ($dashboardGroups[$groupKey] as $task): $taskColor = dashboardColor($task['project_color'] ?? null); ?>
-                                    <?php $isStandalone = !empty($task['is_standalone']); $taskUrl = $isStandalone ? 'projects.php?view=standalone' : 'projects.php?view=task&amp;id=' . (int)$task['id']; $statusAction = $isStandalone ? 'set_standalone_task_status' : 'set_task_status'; $idField = $isStandalone ? 'standalone_task_id' : 'task_id'; ?>
+                                    <?php $isStandalone = !empty($task['is_standalone']); $taskUrl = $isStandalone ? 'projects.php?view=standalone_task&amp;id=' . (int)$task['id'] : 'projects.php?view=task&amp;id=' . (int)$task['id']; $statusAction = $isStandalone ? 'set_standalone_task_status' : 'set_task_status'; $idField = $isStandalone ? 'standalone_task_id' : 'task_id'; ?>
                                     <article class="pm-task-row pm-task-tile" style="--project-color:<?= dashboardEscape($taskColor) ?>" data-task-url="<?= $taskUrl ?>" tabindex="0" role="link" aria-label="Aufgabe öffnen: <?= dashboardEscape($task['title']) ?>">
                                         <a class="pm-task-title" href="<?= $taskUrl ?>"><?= dashboardEscape($task['title']) ?></a>
                                         <div class="pm-task-project"><?= $isStandalone ? 'Projektunabhängige Aufgabe' : dashboardEscape($task['project_title']) ?></div>
