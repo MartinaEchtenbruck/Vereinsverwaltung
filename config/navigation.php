@@ -26,6 +26,12 @@ return [
         'permission' => 'edit_fundraising',
     ],
     [
+        'label' => 'Verkäufe & Bestellungen',
+        'url' => 'verkauf.php',
+        'icon' => 'fas fa-cart-shopping',
+        'permission' => 'Verkauf',
+    ],
+    [
         'label' => 'Projektmanagement',
         'url' => 'projects.php',
         'icon' => 'fas fa-list-check',
