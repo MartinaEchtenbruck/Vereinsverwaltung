@@ -150,7 +150,6 @@ try {
 <div class="profile-field"><label for="full_name">Name</label><input id="full_name" name="full_name" maxlength="255" required value="<?= profileH($user['full_name'] ?? '') ?>"></div>
 <div class="profile-field"><label for="email">E-Mail-Adresse</label><input id="email" name="email" type="email" maxlength="254" required value="<?= profileH($user['email'] ?? '') ?>"></div>
 <div class="profile-field"><label>Kontostatus</label><div><span class="profile-status"><?= !empty($user['is_active']) ? 'Aktiv' : 'Inaktiv' ?></span></div><span class="profile-help">Ein Konto kann nur durch die Administration aktiviert oder deaktiviert werden.</span></div>
-<div class="profile-field"><label>Mitglied seit</label><input value="<?= profileH(isset($user['created_at']) ? date('d.m.Y', strtotime($user['created_at'])) : '') ?>" readonly></div>
 </div>
 <div class="profile-actions"><button class="profile-button" type="submit"><i class="fas fa-save" aria-hidden="true"></i> Profildaten speichern</button></div>
 </form>
