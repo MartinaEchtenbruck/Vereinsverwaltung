@@ -247,3 +247,20 @@
 .app-page-header {
     display: block;
 }
+
+/* Der Profil-Link übernimmt exakt die Darstellung des bisherigen Benutzernamens. */
+.app-navigation-profile-link,
+.app-navigation-profile-link:visited,
+.app-navigation-profile-link:hover,
+.app-navigation-profile-link:active {
+    color: inherit !important;
+    text-decoration: none !important;
+}
+.app-navigation-profile-link {
+    cursor: pointer;
+}
+.app-navigation-profile-link:focus-visible {
+    outline: 2px solid currentColor;
+    outline-offset: 3px;
+    border-radius: 3px;
+}

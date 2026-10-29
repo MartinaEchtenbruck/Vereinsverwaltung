@@ -56,7 +56,7 @@ foreach ($visibleItems as $item) {
             <i class="fas fa-bars" aria-hidden="true"></i><span>Menü</span>
         </button>
         <div class="app-navigation-user">
-            <span class="app-navigation-user-name"><i class="fas fa-user-circle" aria-hidden="true"></i> <?= htmlspecialchars((string) $currentUserName, ENT_QUOTES, 'UTF-8') ?></span>
+            <a class="app-navigation-user-name app-navigation-profile-link" href="profile.php" title="Profil und Einstellungen öffnen"><i class="fas fa-user-circle" aria-hidden="true"></i> <?= htmlspecialchars((string) $currentUserName, ENT_QUOTES, 'UTF-8') ?></a>
             <a class="app-navigation-notifications<?= $notificationUnreadCount > 0 ? ' has-unread' : '' ?>" href="notifications.php" aria-label="Benachrichtigungen<?= $notificationUnreadCount > 0 ? ': '.$notificationUnreadCount.' ungelesen' : '' ?>" title="Benachrichtigungen">
                 <i class="fas fa-bell" aria-hidden="true"></i>
                 <?php if ($notificationUnreadCount > 0): ?><span class="app-navigation-notifications-count"><?= $notificationUnreadCount > 99 ? '99+' : $notificationUnreadCount ?></span><?php endif; ?>

@@ -44,6 +44,7 @@ function nh($v): string { return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8
     <button type="button" id="webpush-disable" class="webpush-button webpush-button-secondary" hidden>Auf diesem Gerät deaktivieren</button>
     <button type="button" id="webpush-test" class="webpush-button webpush-button-secondary" hidden>Testnachricht senden</button>
   </div>
+  <p class="webpush-preferences-link"><a href="profile.php#push-einstellungen"><i class="fas fa-sliders" aria-hidden="true"></i> Benachrichtigungen konfigurieren</a></p>
   <p id="webpush-status" class="webpush-status" role="status" aria-live="polite">Status wird geprüft …</p>
 </section>
 <div class="notifications-toolbar"><p><?= $unread ?> ungelesen · <?= count(array_filter($notifications, fn($n)=>$n['status']==='open')) ?> offen</p><form method="post"><input type="hidden" name="csrf_token" value="<?=nh($csrf)?>"><button type="submit" name="notification_action" value="read_all" class="notifications-secondary">Alle als gelesen markieren</button></form></div>
@@ -54,4 +55,6 @@ function nh($v): string { return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8
 .webpush-card{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:14px 24px;margin:20px 0 24px;padding:18px 20px;background:#fff;border:1px solid #e1e8eb;border-radius:12px;box-shadow:0 3px 12px rgba(30,45,55,.04)}
 .webpush-card-copy{flex:1 1 280px;min-width:0}.webpush-card h2{margin:0 0 7px;color:#263640;font-size:18px}.webpush-card h2 i{margin-right:7px;color:#8a6b00}.webpush-card p{margin:6px 0;color:#53636b;line-height:1.45}.webpush-note{font-size:12px;color:#667780!important}.webpush-actions{display:flex;gap:8px;flex-wrap:wrap}.webpush-button{display:inline-flex;align-items:center;justify-content:center;border:1px solid #e6dc79;border-radius:7px;background:#f4ed9a;color:#303329;padding:9px 12px;font:inherit;font-size:13px;font-weight:600;cursor:pointer}.webpush-button-secondary{background:#fff;border-color:#d8e0e3;color:#53636b}.webpush-button:disabled{opacity:.6;cursor:wait}.webpush-status{flex-basis:100%;margin:0!important;font-size:13px}.webpush-status.is-error{color:#a83232!important}.webpush-status.is-success{color:#247344!important}.webpush-button[hidden]{display:none!important}
 @media(max-width:640px){.webpush-card{align-items:stretch;padding:15px}.webpush-actions{display:grid;grid-template-columns:1fr}.webpush-button{width:100%;box-sizing:border-box}}
+
+.webpush-preferences-link{flex-basis:100%;margin:0!important;font-size:13px}.webpush-preferences-link a{color:#53636b;text-decoration:none}.webpush-preferences-link a:hover{text-decoration:underline;color:#244f62}
 </style><script src="js/webpush.js" defer></script></body></html>
