@@ -42,7 +42,7 @@
     display: flex;
     align-items: center;
     justify-content: flex-end;
-    gap: 12px;
+    gap: 10px;
     color: #64717a;
     font-size: 12px;
     min-width: 0;
@@ -55,38 +55,37 @@
     color: #53636c;
 }
 
+.app-navigation-actions {
+    display: flex;
+    align-items: center;
+    flex: 0 0 auto;
+}
 .app-navigation-notifications {
+    position: relative;
     display: inline-flex;
     align-items: center;
     justify-content: center;
     gap: 5px;
     min-width: 24px;
-    min-height: 28px;
-    padding: 2px 0;
+    min-height: 32px;
+    padding: 2px 3px;
     border: 0;
     border-radius: 0;
     background: transparent;
     color: #8a969c;
     text-decoration: none;
     font-size: 16px;
-    line-height: 1;
     transition: color .15s ease;
-    flex: 0 0 auto;
 }
 .app-navigation-notifications:hover,
-.app-navigation-notifications:focus-visible {
-    color: #52656f;
-    outline-offset: 3px;
-}
-.app-navigation-notifications.is-active { color: #52656f; }
-.app-navigation-notifications.has-unread { color: #c93636; }
-.app-navigation-notifications-count {
-    color: #c93636;
-    font-size: 12px;
-    font-weight: 700;
-    line-height: 1;
-    font-variant-numeric: tabular-nums;
-}
+.app-navigation-notifications:focus-visible { background: transparent; color: #53636c; outline-offset: 3px; }
+.app-navigation-notifications > i { color: inherit; }
+.app-navigation-notifications.has-unread,
+.app-navigation-notifications.has-unread > i { color: #c83d36; }
+.app-navigation-notifications-count { color: #c83d36; font-size: 12px; line-height: 1; font-weight: 700; min-width: 10px; text-align: left; }
+.app-navigation-notifications-label { display: none; }
+.app-navigation-notifications.is-active { color: #53636c; }
+
 
 .app-navigation-logout {
     display: inline-flex;
@@ -212,7 +211,8 @@
         font-weight: 600;
         cursor: pointer;
     }
-    .app-navigation-notifications { min-height: 28px; }
+    .app-navigation-actions { margin-left: auto; }
+    .app-navigation-notifications { min-height: 32px; }
     .app-navigation-user { width: 100%; justify-content: flex-start; flex-wrap: wrap; margin-left: 0; }
     .app-navigation-menu { display: none; flex-direction: column; align-items: stretch; gap: 4px; padding: 8px; }
     .app-navigation.menu-open .app-navigation-menu { display: flex; }
@@ -234,6 +234,7 @@
     .app-page-header { gap: 14px; }
 }
 @media (max-width: 420px) {
+    .app-navigation-notifications-label { display: none; }
     .app-navigation-user { font-size: 11px; }
     .app-navigation-role { display: none; }
     .app-navigation-logout { margin-left: auto; }

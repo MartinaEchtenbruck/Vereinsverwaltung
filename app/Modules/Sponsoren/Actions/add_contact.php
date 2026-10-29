@@ -81,6 +81,29 @@ try {
     ]);
     
     if ($success) {
+        // Neue Kontaktvorschläge an alle aktiven Benutzer mit Übernahme-/Bearbeitungsrecht melden.
+        if ($is_suggestion === 1) {
+            try {
+                require_once $appRoot . '/app/Core/Notifications.php';
+                $recipients = fvNotificationRecipients($conn, ['add_contacts', 'edit_contacts']);
+                foreach ($recipients as $recipientId) {
+                    fvCreateNotification(
+                        $conn,
+                        $recipientId,
+                        'contact_suggestion',
+                        'contact',
+                        (int)$nextPrimaryKey,
+                        'suggestion',
+                        'Neuer Kontaktvorschlag',
+                        'Der Kontakt „' . trim((string)$data['name']) . '“ wurde zur Übernahme vorgeschlagen.',
+                        'index.php?contact_status=&exclude_suggestions=0'
+                    );
+                }
+            } catch (Throwable $notificationError) {
+                // Ein Benachrichtigungsproblem darf das erfolgreiche Anlegen des Kontakts nicht als Fehler melden.
+                error_log('Kontakt wurde angelegt, Benachrichtigung konnte aber nicht erstellt werden: ' . $notificationError->getMessage());
+            }
+        }
         echo json_encode([
             'success' => true, 
             'new_primary_key' => $nextPrimaryKey,

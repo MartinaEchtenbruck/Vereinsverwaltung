@@ -1,0 +1,19 @@
+Benachrichtigungen – erste zwei Typen
+
+Installation:
+1. Vollständige Sicherung der aktuellen Anwendung und Datenbank erstellen.
+2. Zuerst database/migrations/2026-10-28_02_notifications.sql einmalig in phpMyAdmin ausführen.
+3. Danach die übrigen Dateien dieses ZIPs per FTP in /intern/ übertragen und vorhandene Dateien überschreiben.
+4. Browser mit Strg+F5 neu laden.
+
+Enthaltene Funktionen:
+- Überfällige Aufgaben (Projektaufgaben und projektunabhängige Aufgaben) erzeugen einmal pro Fälligkeitsdatum eine Benachrichtigung für aktive Benutzer mit ProjectManagement-Recht.
+- Neue Kontaktvorschläge erzeugen Benachrichtigungen nur für aktive Benutzer mit add_contacts oder edit_contacts.
+- Glockenzähler zählt nur ungelesene Benachrichtigungen des angemeldeten Benutzers, für die er aktuell berechtigt ist.
+- Lesen und Erledigen sind getrennt; Kontaktbenachrichtigungen werden automatisch erledigt, sobald der Kontakt kein Vorschlag mehr ist.
+- Die Benachrichtigungsseite prüft Rechte serverseitig. Das Projekt-Dashboard wird nicht geändert.
+
+Hinweise:
+- Die Synchronisierung überfälliger Aufgaben läuft beim Laden einer Seite mit gemeinsamer Navigation. Ein Cronjob ist für diese erste Version nicht nötig; wenn sich niemand in der App anmeldet, werden neue Überfälligkeiten erst beim nächsten Seitenaufruf erkannt.
+- Beim ersten Aufruf nach Installation werden auch Aufgaben berücksichtigt, die zu diesem Zeitpunkt bereits überfällig sind.
+- Die vorhandene Datei db_connection.php wird vorausgesetzt und ist nicht Bestandteil des ZIPs.

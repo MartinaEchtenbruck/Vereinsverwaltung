@@ -7,8 +7,27 @@ $navigationItems = require __DIR__ . '/../config/navigation.php';
 $currentPage = basename(parse_url($_SERVER['SCRIPT_NAME'] ?? '', PHP_URL_PATH) ?: '');
 $currentUserName = $_SESSION['full_name'] ?? $_SESSION['username'] ?? 'Benutzer';
 $currentUserRole = getUserRole();
-// Wird beim Ausbau des Benachrichtigungssystems durch die echte Anzahl ersetzt.
-$unreadNotificationCount = 0;
+$notificationUnreadCount = 0;
+try {
+    require_once __DIR__ . '/../db_connection.php';
+    require_once __DIR__ . '/../app/Core/Notifications.php';
+    $notificationDb = (new Database())->getConnection();
+    $notificationDb->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    fvSyncNotifications($notificationDb);
+    $notificationUserId = (int)($_SESSION['user_id'] ?? 0);
+    $notificationCanSeeTasks = fvNotificationCanSee($notificationDb, $notificationUserId, 'ProjectManagement');
+    $notificationCanManageContacts = fvNotificationCanSee($notificationDb, $notificationUserId, 'add_contacts') || fvNotificationCanSee($notificationDb, $notificationUserId, 'edit_contacts');
+    $notificationConditions = ['user_id=?', 'is_read=0'];
+    $notificationParams = [$notificationUserId];
+    if (!$notificationCanSeeTasks) $notificationConditions[] = "notification_type<>'task_overdue'";
+    if (!$notificationCanManageContacts) $notificationConditions[] = "notification_type<>'contact_suggestion'";
+    $notificationCountStmt = $notificationDb->prepare('SELECT COUNT(*) FROM notifications WHERE '.implode(' AND ', $notificationConditions));
+    $notificationCountStmt->execute($notificationParams);
+    $notificationUnreadCount = (int)$notificationCountStmt->fetchColumn();
+} catch (Throwable $notificationError) {
+    // Die Navigation darf bei fehlender Migration nicht die gesamte Anwendung blockieren.
+    error_log('Benachrichtigungszähler: '.$notificationError->getMessage());
+}
 
 $visibleItems = [];
 foreach ($navigationItems as $item) {
@@ -38,9 +57,10 @@ foreach ($visibleItems as $item) {
         </button>
         <div class="app-navigation-user">
             <span class="app-navigation-user-name"><i class="fas fa-user-circle" aria-hidden="true"></i> <?= htmlspecialchars((string) $currentUserName, ENT_QUOTES, 'UTF-8') ?></span>
-            <a class="app-navigation-notifications<?= $currentPage === 'notifications.php' ? ' is-active' : '' ?><?= $unreadNotificationCount > 0 ? ' has-unread' : '' ?>" href="notifications.php" aria-label="Benachrichtigungen<?= $unreadNotificationCount > 0 ? ', ' . $unreadNotificationCount . ' ungelesen' : '' ?>" title="Benachrichtigungen">
+            <a class="app-navigation-notifications<?= $notificationUnreadCount > 0 ? ' has-unread' : '' ?>" href="notifications.php" aria-label="Benachrichtigungen<?= $notificationUnreadCount > 0 ? ': '.$notificationUnreadCount.' ungelesen' : '' ?>" title="Benachrichtigungen">
                 <i class="fas fa-bell" aria-hidden="true"></i>
-                <?php if ($unreadNotificationCount > 0): ?><span class="app-navigation-notifications-count"><?= (int) $unreadNotificationCount ?></span><?php endif; ?>
+                <?php if ($notificationUnreadCount > 0): ?><span class="app-navigation-notifications-count"><?= $notificationUnreadCount > 99 ? '99+' : $notificationUnreadCount ?></span><?php endif; ?>
+                <span class="app-navigation-notifications-label">Benachrichtigungen</span>
             </a>
             <?php if ($currentUserRole !== null && $currentUserRole !== false && $currentUserRole !== ''): ?>
                 <span class="app-navigation-role"><?= htmlspecialchars((string) $currentUserRole, ENT_QUOTES, 'UTF-8') ?></span>
