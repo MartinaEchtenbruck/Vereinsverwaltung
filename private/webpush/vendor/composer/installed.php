@@ -28,6 +28,33 @@
             'aliases' => array(),
             'dev_requirement' => false,
         ),
+        'guzzlehttp/guzzle' => array(
+            'pretty_version' => '8.3.0',
+            'version' => '8.3.0.0',
+            'reference' => 'b920e5fcaf81d761b8fabe600ca90999beaefdb7',
+            'type' => 'library',
+            'install_path' => __DIR__ . '/../guzzlehttp/guzzle',
+            'aliases' => array(),
+            'dev_requirement' => false,
+        ),
+        'guzzlehttp/promises' => array(
+            'pretty_version' => '3.1.0',
+            'version' => '3.1.0.0',
+            'reference' => '094d0ec418eb3b1411ea271a180ec95cae6ae933',
+            'type' => 'library',
+            'install_path' => __DIR__ . '/../guzzlehttp/promises',
+            'aliases' => array(),
+            'dev_requirement' => false,
+        ),
+        'guzzlehttp/psr7' => array(
+            'pretty_version' => '3.2.0',
+            'version' => '3.2.0.0',
+            'reference' => 'cdc139396207a5eba10c242d241fb014cb098390',
+            'type' => 'library',
+            'install_path' => __DIR__ . '/../guzzlehttp/psr7',
+            'aliases' => array(),
+            'dev_requirement' => false,
+        ),
         'minishlink/web-push' => array(
             'pretty_version' => 'v11.0.0',
             'version' => '11.0.0.0',
@@ -98,6 +125,7 @@
             'dev_requirement' => false,
             'provided' => array(
                 0 => '*',
+                1 => '1.0',
             ),
         ),
         'psr/http-factory' => array(
@@ -113,6 +141,7 @@
             'dev_requirement' => false,
             'provided' => array(
                 0 => '*',
+                1 => '1.1',
             ),
         ),
         'psr/http-message' => array(
@@ -128,6 +157,7 @@
             'dev_requirement' => false,
             'provided' => array(
                 0 => '*',
+                1 => '2.0',
             ),
         ),
         'psr/log' => array(
@@ -163,6 +193,24 @@
             'reference' => 'f3202fa1b5097b0af062dc978b32ecf63404e31d',
             'type' => 'library',
             'install_path' => __DIR__ . '/../symfony/deprecation-contracts',
+            'aliases' => array(),
+            'dev_requirement' => false,
+        ),
+        'symfony/polyfill-php80' => array(
+            'pretty_version' => 'v1.43.0',
+            'version' => '1.43.0.0',
+            'reference' => '9c6a5d6b01ca51d486c813e9a9c0ed55f208bb74',
+            'type' => 'library',
+            'install_path' => __DIR__ . '/../symfony/polyfill-php80',
+            'aliases' => array(),
+            'dev_requirement' => false,
+        ),
+        'symfony/polyfill-php82' => array(
+            'pretty_version' => 'v1.43.0',
+            'version' => '1.43.0.0',
+            'reference' => '843bbe8b2a7934307b749751eede0f111f5d1cfc',
+            'type' => 'library',
+            'install_path' => __DIR__ . '/../symfony/polyfill-php82',
             'aliases' => array(),
             'dev_requirement' => false,
         ),
