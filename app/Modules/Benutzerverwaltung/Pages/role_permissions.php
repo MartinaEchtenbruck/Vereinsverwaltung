@@ -21,8 +21,54 @@ checkPermission('manage_users');
 $message = '';
 $error = '';
 
+// Rollen anlegen oder Stammdaten bearbeiten
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['role_action'])) {
+    try {
+        $database = new Database();
+        $conn = $database->getConnection();
+        $roleName = trim((string)($_POST['role_name'] ?? ''));
+        $roleDescription = trim((string)($_POST['description'] ?? ''));
+
+        if ($roleName === '') {
+            throw new RuntimeException('Bitte geben Sie einen Rollennamen ein.');
+        }
+        if (mb_strlen($roleName) > 100) {
+            throw new RuntimeException('Der Rollenname darf höchstens 100 Zeichen lang sein.');
+        }
+        if (mb_strlen($roleDescription) > 1000) {
+            throw new RuntimeException('Die Beschreibung darf höchstens 1000 Zeichen lang sein.');
+        }
+
+        if ($_POST['role_action'] === 'create') {
+            $stmt = $conn->prepare('SELECT id FROM roles WHERE LOWER(role_name) = LOWER(?) LIMIT 1');
+            $stmt->execute([$roleName]);
+            if ($stmt->fetchColumn()) {
+                throw new RuntimeException('Eine Rolle mit diesem Namen existiert bereits.');
+            }
+            $stmt = $conn->prepare('INSERT INTO roles (role_name, description) VALUES (?, ?)');
+            $stmt->execute([$roleName, $roleDescription]);
+            $message = 'Die Rolle wurde erfolgreich angelegt.';
+        } elseif ($_POST['role_action'] === 'update') {
+            $roleId = (int)($_POST['role_id'] ?? 0);
+            if ($roleId <= 0) {
+                throw new RuntimeException('Ungültige Rollen-ID.');
+            }
+            $stmt = $conn->prepare('SELECT id FROM roles WHERE LOWER(role_name) = LOWER(?) AND id <> ? LIMIT 1');
+            $stmt->execute([$roleName, $roleId]);
+            if ($stmt->fetchColumn()) {
+                throw new RuntimeException('Eine andere Rolle mit diesem Namen existiert bereits.');
+            }
+            $stmt = $conn->prepare('UPDATE roles SET role_name = ?, description = ? WHERE id = ?');
+            $stmt->execute([$roleName, $roleDescription, $roleId]);
+            $message = 'Die Rolle wurde erfolgreich aktualisiert.';
+        }
+    } catch (Throwable $e) {
+        $error = $e instanceof RuntimeException ? $e->getMessage() : 'Die Rolle konnte nicht gespeichert werden.';
+    }
+}
+
 // Berechtigungen für Rolle aktualisieren
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['role_id'])) {
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['role_id']) && !isset($_POST['role_action'])) {
     $role_id = intval($_POST['role_id']);
     $selected_permissions = $_POST['permissions'] ?? [];
     
@@ -200,6 +246,15 @@ try {
         .header-links a:hover {
             text-decoration: underline;
         }
+        .roles-heading { display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; }
+        .role-item { position:relative; padding-right:48px; }
+        .role-edit-btn { position:absolute; right:10px; top:10px; border:0; background:transparent; color:var(--primary-color); cursor:pointer; padding:7px; }
+        .role-modal { display:none; position:fixed; inset:0; z-index:10000; background:rgba(0,0,0,.45); align-items:center; justify-content:center; padding:20px; }
+        .role-modal.open { display:flex; }
+        .role-modal-card { background:#fff; width:min(100%,460px); border-radius:8px; padding:22px; box-shadow:0 10px 35px rgba(0,0,0,.2); }
+        .role-modal-card label { display:block; margin:12px 0 5px; font-weight:600; }
+        .role-modal-card input, .role-modal-card textarea { width:100%; box-sizing:border-box; padding:10px; border:1px solid var(--border-color); border-radius:4px; }
+        .role-modal-actions { display:flex; justify-content:flex-end; gap:8px; margin-top:18px; }
     </style>
     <link rel="stylesheet" href="includes/navigation.css">
 
@@ -236,9 +291,10 @@ try {
         
         <div class="permissions-container">
             <div class="roles-list">
-                <h3>Verfügbare Rollen</h3>
+                <div class="roles-heading"><h3>Verfügbare Rollen</h3><button type="button" class="btn btn-primary" onclick="openRoleModal('create')"><i class="fas fa-plus"></i> Neue Rolle anlegen</button></div>
                 <?php foreach ($roles as $role): ?>
                     <div class="role-item" data-role-id="<?php echo $role['id']; ?>">
+                        <button type="button" class="role-edit-btn" title="Rolle bearbeiten" aria-label="Rolle bearbeiten" onclick="event.stopPropagation(); openRoleModal('edit', <?php echo (int)$role['id']; ?>)"><i class="fas fa-pen"></i></button>
                         <div class="role-name"><?php echo htmlspecialchars($role['role_name']); ?></div>
                         <div class="role-description"><?php echo htmlspecialchars($role['description']); ?></div>
                         <small style="color: #666;">
@@ -291,6 +347,24 @@ try {
         </div>
     </div>
 
+    <div class="role-modal" id="roleModal" role="dialog" aria-modal="true" aria-labelledby="roleModalTitle">
+        <div class="role-modal-card">
+            <h3 id="roleModalTitle">Rolle anlegen</h3>
+            <form method="POST" id="roleDetailsForm">
+                <input type="hidden" name="role_action" id="roleAction" value="create">
+                <input type="hidden" name="role_id" id="roleDetailsId" value="">
+                <label for="roleNameInput">Rollenname *</label>
+                <input type="text" name="role_name" id="roleNameInput" maxlength="100" required>
+                <label for="roleDescriptionInput">Beschreibung</label>
+                <textarea name="description" id="roleDescriptionInput" rows="4" maxlength="1000"></textarea>
+                <div class="role-modal-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeRoleModal()">Abbrechen</button>
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Speichern</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <script>
         // Rollen- und Berechtigungsdaten von PHP zu JavaScript
         const roles = <?php echo json_encode($roles); ?>;
@@ -298,6 +372,22 @@ try {
         const rolePermissions = <?php echo json_encode($role_permissions); ?>;
         
         let selectedRoleId = null;
+
+        function openRoleModal(action, roleId = null) {
+            const modal = document.getElementById('roleModal');
+            const role = action === 'edit' ? roles.find(r => Number(r.id) === Number(roleId)) : null;
+            if (action === 'edit' && !role) return;
+            document.getElementById('roleAction').value = action;
+            document.getElementById('roleDetailsId').value = role ? role.id : '';
+            document.getElementById('roleModalTitle').textContent = action === 'edit' ? 'Rolle bearbeiten' : 'Neue Rolle anlegen';
+            document.getElementById('roleNameInput').value = role ? role.role_name : '';
+            document.getElementById('roleDescriptionInput').value = role ? (role.description || '') : '';
+            modal.classList.add('open');
+            document.getElementById('roleNameInput').focus();
+        }
+        function closeRoleModal() { document.getElementById('roleModal').classList.remove('open'); }
+        document.getElementById('roleModal').addEventListener('click', function(e) { if (e.target === this) closeRoleModal(); });
+        document.addEventListener('keydown', function(e) { if (e.key === 'Escape') closeRoleModal(); });
         
         // Rolle auswählen
         document.querySelectorAll('.role-item').forEach(item => {
