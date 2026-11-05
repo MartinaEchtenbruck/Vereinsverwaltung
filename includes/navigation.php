@@ -5,6 +5,17 @@
  */
 $navigationItems = require __DIR__ . '/../config/navigation.php';
 $currentPage = basename(parse_url($_SERVER['SCRIPT_NAME'] ?? '', PHP_URL_PATH) ?: '');
+$currentQuery = [];
+parse_str((string) (parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_QUERY) ?: ''), $currentQuery);
+$isNavigationItemActive = static function (array $item) use ($currentPage, $currentQuery): bool {
+    if ($currentPage !== basename((string) ($item['url'] ?? ''))) return false;
+    $targetQuery = [];
+    parse_str((string) (parse_url((string) ($item['url'] ?? ''), PHP_URL_QUERY) ?: ''), $targetQuery);
+    foreach (['view'] as $key) {
+        if (($targetQuery[$key] ?? null) !== ($currentQuery[$key] ?? null)) return false;
+    }
+    return true;
+};
 $currentUserName = $_SESSION['full_name'] ?? $_SESSION['username'] ?? 'Benutzer';
 $currentUserRole = getUserRole();
 $notificationUnreadCount = 0;
@@ -38,7 +49,8 @@ foreach ($navigationItems as $item) {
 $navigationGroups = [
     'Sponsoren & Spenden' => ['Sponsorenübersicht', 'Spendenaktion'],
     'Verkäufe & Bestellungen' => ['Verkäufe & Bestellungen'],
-    'Projekte & Aufgaben' => ['Projektmanagement'],
+    'Projekte & Aufgaben' => ['Aufgabenübersicht', 'Projekt anlegen', 'Einzelaufgaben', 'Vorlagen'],
+    'Mitgliederverwaltung' => ['Mitgliederübersicht'],
     'Verwaltung' => ['Benutzerverwaltung', 'Rollen & Rechte'],
 ];
 $dashboardItem = null;
@@ -79,14 +91,14 @@ foreach ($visibleItems as $item) {
             $items = array_values(array_filter($visibleItems, static fn($item) => in_array($item['label'], $groupItemLabels, true)));
             if (!$items) continue;
             $groupActive = false;
-            foreach ($items as $item) if ($currentPage === basename($item['url'])) $groupActive = true;
+            foreach ($items as $item) if ($isNavigationItemActive($item)) $groupActive = true;
             ?>
             <div class="app-navigation-group<?= $groupActive ? ' has-active' : '' ?>">
                 <button class="app-navigation-link app-navigation-group-toggle" type="button" aria-expanded="false">
                     <span><?= htmlspecialchars($groupLabel, ENT_QUOTES, 'UTF-8') ?></span><i class="fas fa-chevron-down app-navigation-chevron" aria-hidden="true"></i>
                 </button>
                 <div class="app-navigation-dropdown">
-                    <?php foreach ($items as $item): $isCurrentPage = $currentPage === basename($item['url']); ?>
+                    <?php foreach ($items as $item): $isCurrentPage = $isNavigationItemActive($item); ?>
                         <a href="<?= htmlspecialchars($item['url'], ENT_QUOTES, 'UTF-8') ?>"<?= $isCurrentPage ? ' class="is-active" aria-current="page"' : '' ?>>
                             <i class="<?= htmlspecialchars($item['icon'], ENT_QUOTES, 'UTF-8') ?>" aria-hidden="true"></i><span><?= htmlspecialchars($item['label'], ENT_QUOTES, 'UTF-8') ?></span>
                         </a>

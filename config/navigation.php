@@ -2,7 +2,7 @@
 /**
  * Zentrale Definition der globalen Navigation.
  *
- * URLs bleiben in Phase A bewusst im bisherigen Projektverzeichnis.
+ * URLs bleiben im bisherigen Projektverzeichnis.
  * Die Datenbank und bestehende Seitenpfade werden nicht verändert.
  */
 return [
@@ -10,7 +10,6 @@ return [
         'label' => 'Dashboard',
         'url' => 'dashboard.php',
         'icon' => 'fas fa-gauge-high',
-        // Für alle angemeldeten Benutzer sichtbar.
         'permission' => null,
     ],
     [
@@ -32,10 +31,34 @@ return [
         'permission' => 'Verkauf',
     ],
     [
-        'label' => 'Projektmanagement',
+        'label' => 'Aufgabenübersicht',
         'url' => 'projects.php',
         'icon' => 'fas fa-list-check',
         'permission' => 'ProjectManagement',
+    ],
+    [
+        'label' => 'Projekt anlegen',
+        'url' => 'projects.php?view=new',
+        'icon' => 'fas fa-plus',
+        'permission' => 'ProjectManagement',
+    ],
+    [
+        'label' => 'Einzelaufgaben',
+        'url' => 'projects.php?view=standalone',
+        'icon' => 'fas fa-list-check',
+        'permission' => 'ProjectManagement',
+    ],
+    [
+        'label' => 'Vorlagen',
+        'url' => 'projects.php?view=templates',
+        'icon' => 'fas fa-layer-group',
+        'permission' => 'ProjectManagement',
+    ],
+    [
+        'label' => 'Mitgliederübersicht',
+        'url' => 'mitglieder.php',
+        'icon' => 'fas fa-address-card',
+        'permission' => 'manage_members',
     ],
     [
         'label' => 'Benutzerverwaltung',

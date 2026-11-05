@@ -72,7 +72,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             error_log("Fehler: Rolle 'user' konnte nicht für Benutzer $username zugewiesen werden");
                         }
                         
-                        // E-Mail an Administratoren senden
+                        // Interne Benachrichtigung und Push an alle aktiven Benutzer
+                        // mit Zugriff auf die Benutzerverwaltung.
+                        try {
+                            require_once $appRoot . '/app/Core/Notifications.php';
+                            $recipients = fvNotificationRecipients($conn, ['manage_users']);
+                            foreach ($recipients as $recipientId) {
+                                fvCreateNotification(
+                                    $conn,
+                                    (int) $recipientId,
+                                    'user_registered',
+                                    'user',
+                                    (int) $newUserId,
+                                    'registered',
+                                    'Neuer Benutzer registriert',
+                                    $full_name . ' hat einen Registrierungsantrag eingereicht.',
+                                    'users.php'
+                                );
+                            }
+                        } catch (Throwable $notificationError) {
+                            // Die Registrierung bleibt erfolgreich, auch wenn die Benachrichtigung fehlschlägt.
+                            error_log('Neue Benutzerregistrierung: Benachrichtigung konnte nicht erstellt werden: ' . $notificationError->getMessage());
+                        }
+
+                        // Bestehende E-Mail-Benachrichtigung an Administratoren beibehalten.
                         sendAdminNotification($username, $email, $full_name, $comment);
                         
                         $success = 'Ihr Registrierungsantrag wurde erfolgreich eingereicht. Sie erhalten eine E-Mail, sobald Ihr Account freigeschaltet wurde.';

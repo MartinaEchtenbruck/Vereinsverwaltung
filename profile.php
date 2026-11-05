@@ -31,6 +31,10 @@ $pushTypes = [
         'label' => 'Kontaktvorschläge',
         'description' => 'Hinweise zu neuen Kontaktvorschlägen, die geprüft werden sollen.',
     ],
+    'user_registered' => [
+        'label' => 'Neue Benutzerregistrierungen',
+        'description' => 'Push-Hinweis, wenn ein neuer Benutzer einen Registrierungsantrag einreicht.',
+    ],
 ];
 
 function profileH($value): string {
