@@ -79,7 +79,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - Spendenkontakte Verwaltung</title>
+    <title>Anmelden – Förderverein | Interner Bereich</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root {
@@ -116,20 +116,54 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             max-width: 400px;
             margin: 20px;
         }
-        
         .login-header {
             text-align: center;
             margin-bottom: 30px;
             border-bottom: 1px solid var(--border-color);
             padding-bottom: 20px;
         }
-        
-        .login-header h1 {
-            color: var(--primary-color);
-            margin: 0 0 10px 0;
-            font-size: 28px;
+        .login-brand {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            justify-content: flex-start;
+            gap: 18px;
+            margin: 0;
+            text-align: left;
         }
-        
+
+        .login-brand img {
+            display: block;
+            width: auto;
+            height: 100px;
+            max-width: 140px;
+            object-fit: contain;
+            object-position: left center;
+            flex: 0 0 auto;
+        }
+
+        .login-brand strong {
+            display: block;
+            color: #263b45;
+            font-size: 25px;
+            line-height: 1.2;
+            font-weight: 700;
+        }
+
+        .login-brand span {
+            display: block;
+            margin-top: 3px;
+            color: #68777d;
+            font-size: 14px;
+        }
+
+        .login-welcome {
+            color: #666;
+            margin: 18px 0 0;
+            font-size: 14px;
+            text-align: center;
+        }
+
         .login-header p {
             color: #666;
             margin: 0;
@@ -243,13 +277,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta name="apple-mobile-web-app-title" content="Förderverein intern">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
-    <meta name="theme-color" content="#FFF500">
+    <meta name="theme-color" content="#f9f9f9">
 </head>
 <body>
     <div class="login-container">
         <div class="login-header">
-            <h1><i class="fas fa-hand-holding-heart"></i> Spendenkontakte</h1>
-            <p>Bitte melden Sie sich an</p>
+            <div class="login-brand">
+                <img src="/intern/assets/foerderverein-logo.png" alt="Logo Förderverein">
+                <div>
+                    <strong>Förderverein</strong>
+                    <span>Interner Bereich</span>
+                </div>
+            </div>
         </div>
         
         <?php if ($error): ?>
