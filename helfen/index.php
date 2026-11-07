@@ -13,6 +13,33 @@ $actions=$db->query("SELECT * FROM helper_actions WHERE status='active' AND end_
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#f4efdc">
+<meta name="application-name" content="Helferbereich – Förderverein">
+<meta name="description" content="Unterstütze den Förderverein des Evangelischen Kindergartens Rumeln: Entdecke offene Helferschichten und melde dich unkompliziert für passende Zeiten an.">
+
+<!-- App-Icon / Favicon -->
+<link rel="icon" type="image/png" href="https://evkigarumeln.de/intern/assets/foerderverein-logo.png?v=20261107-2">
+<link rel="shortcut icon" href="https://foerderverein.evkigarumeln.de/intern/assets/foerderverein-logo.png?v=20261107-2">
+<link rel="apple-touch-icon" href="https://foerderverein.evkigarumeln.de/intern/assets/foerderverein-logo.png?v=20261107-2">
+
+<!-- Metadaten für Linkvorschauen (WhatsApp, iMessage und andere Messenger) -->
+<meta property="og:type" content="website">
+<meta property="og:locale" content="de_DE">
+<meta property="og:site_name" content="Förderverein Evangelischer Kindergarten Rumeln">
+<meta property="og:title" content="Helferbereich – Förderverein">
+<meta property="og:description" content="Unterstütze den Förderverein des Evangelischen Kindergartens Rumeln: Entdecke offene Helferschichten und melde dich unkompliziert für passende Zeiten an.">
+<meta property="og:url" content="https://foerderverein.evkigarumeln.de/helfen/">
+<meta property="og:image" content="https://foerderverein.evkigarumeln.de/helfen/helfen-vorschau.png">
+<meta property="og:image:secure_url" content="https://foerderverein.evkigarumeln.de/helfen/helfen-vorschau.png">
+<meta property="og:image:type" content="image/png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Helferbereich des Fördervereins Evangelischer Kindergarten Rumeln">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Helferbereich – Förderverein">
+<meta name="twitter:description" content="Unterstütze den Förderverein des Evangelischen Kindergartens Rumeln und melde dich für offene Helferschichten an.">
+<meta name="twitter:image" content="https://foerderverein.evkigarumeln.de/helfen/helfen-vorschau.png">
+
 <title>Helferbereich – Förderverein</title>
 <style>
 :root{--primary-color:#3498db;--success-color:#2ecc71;--warning-color:#f39c12;--danger-color:#e74c3c;--light-gray:#f5f5f5;--border-color:#ddd;--button-gray:#6c757d;--fv-ink:#333;--fv-muted:#6c757d;--fv-line:var(--border-color);--fv-bg:#f9f9f9;--fv-primary:var(--primary-color);--fv-card:#fff;--fv-shadow:0 2px 10px rgba(0,0,0,.1)}
