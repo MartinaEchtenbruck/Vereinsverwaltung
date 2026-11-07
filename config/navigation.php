@@ -31,6 +31,12 @@ return [
         'permission' => 'Verkauf',
     ],
     [
+        'label' => 'Helferlisten',
+        'url' => 'helferlisten.php',
+        'icon' => 'fas fa-people-group',
+        'permission' => 'manage_helpers',
+    ],
+    [
         'label' => 'Aufgabenübersicht',
         'url' => 'projects.php',
         'icon' => 'fas fa-list-check',

@@ -48,7 +48,7 @@ foreach ($navigationItems as $item) {
 }
 $navigationGroups = [
     'Sponsoren & Spenden' => ['Sponsorenübersicht', 'Spendenaktion'],
-    'Verkäufe & Bestellungen' => ['Verkäufe & Bestellungen'],
+    'Aktionen' => ['Verkäufe & Bestellungen', 'Helferlisten'],
     'Projekte & Aufgaben' => ['Aufgabenübersicht', 'Projekt anlegen', 'Einzelaufgaben', 'Vorlagen'],
     'Mitgliederverwaltung' => ['Mitgliederübersicht'],
     'Verwaltung' => ['Benutzerverwaltung', 'Rollen & Rechte'],
