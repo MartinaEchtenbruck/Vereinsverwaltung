@@ -170,7 +170,7 @@ body{margin:0;padding:20px;background:var(--fv-bg);color:var(--fv-ink);font:15px
         ?>
         <details class="helper-day">
             <summary><span class="helper-day-title"><?=h($dayLabel)?></span><span class="helper-day-status <?=$dayStatusClass?>">Noch <?=$dayOpen?>/<?=$dayTotal?> Schichten zu besetzen</span></summary>
-            <div class="helper-table-wrap"><table class="helper-table"><thead><tr><th>Zeit</th><?php foreach($stations as $s):?><th><?=h($s['name'])?><br><?=$s['capacity']?> benötigt</th><?php endforeach;?></tr></thead><tbody>
+            <div class="helper-table-wrap"><table class="helper-table"><thead><tr><th>Zeit</th><?php foreach($stations as $s):?><th><?=h($s['name'])?></th><?php endforeach;?></tr></thead><tbody>
             <?php foreach($slots as $sl):?><tr><th><?=h($sl['label'])?></th><?php foreach($stations as $s):$k=$d['id'].'|'.$s['id'].'|'.$sl['key'];$q=$db->prepare('SELECT active_slots_json FROM helper_day_stations WHERE day_id=? AND station_id=?');$q->execute([$d['id'],$s['id']]);$active=json_decode((string)$q->fetchColumn(),true)?:[];$o=$occ[$k]??['used'=>0,'names'=>''];$full=(int)$o['used']>=(int)$s['capacity'];$checked=isset($current[$k]);?>
             <td><?php if(in_array($sl['key'],$active,true)):?><button type="button" class="slot <?=$full?'full':((int)$o['used']?'partial':'')?> <?=$checked?'selected':''?>" data-key="<?=h($k)?>" <?=$full&&!$checked?'disabled':''?>><b><?=(int)$o['used']?>/<?=$s['capacity']?></b><small><?=h($o['names'])?></small><span><?=$checked?'✓':''?></span></button><?php else:?>–<?php endif;?></td>
             <?php endforeach;?></tr><?php endforeach;?>
