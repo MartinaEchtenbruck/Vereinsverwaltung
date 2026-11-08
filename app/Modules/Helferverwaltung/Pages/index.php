@@ -69,7 +69,10 @@ $selected=(int)($_GET['aktion']??($actions[0]['id']??0));$q=$db->prepare('SELECT
 .helper-tag.shifts-yellow{background:#fff3cd;color:#805b00}
 .helper-tag.shifts-green{background:#d9f2df;color:#176b35}
 .helper-new-form[hidden]{display:none}
-.helper-actions-cell{white-space:nowrap}\n.helper-mobile-info{display:none}
+.helper-actions-cell{white-space:nowrap}
+.helper-mobile-info{display:none}
+.helper-desktop-title{display:block;font-weight:600;color:#253247}
+.helper-desktop-only{display:table-cell}
 .helper-actions-cell .helper-btn{margin-right:4px}
 .helper-desktop-date,.helper-desktop-status,.helper-desktop-shifts{display:table-cell}
 @media(max-width:650px){
@@ -81,6 +84,8 @@ $selected=(int)($_GET['aktion']??($actions[0]['id']??0));$q=$db->prepare('SELECT
   .helper-table tbody tr:hover{background:#fff}
   .helper-table td{display:block;border:0;padding:0;font-size:.9rem;min-width:0}
   .helper-table td.helper-info-cell{grid-area:info}
+  .helper-desktop-title{display:none}
+  .helper-desktop-only{display:none !important}
   .helper-mobile-info{display:flex;flex-direction:column;align-items:flex-start;gap:5px}
   .helper-mobile-title{font-weight:650;font-size:1rem;color:#253247}
   .helper-mobile-date{color:#667085;font-size:.85rem}
@@ -101,6 +106,6 @@ $selected=(int)($_GET['aktion']??($actions[0]['id']??0));$q=$db->prepare('SELECT
 14:00-16:00
 16:00-18:00
 18:00-19:00</textarea></label><button class="helper-btn primary" type="submit">Aktion anlegen</button><button class="helper-btn" type="button" id="cancelNewAction">Abbrechen</button></form></div>
-<?php if(!$actions):?><p class="helper-muted">Noch keine Helferaktionen angelegt.</p><?php else:?><div style="overflow-x:auto"><table class="helper-table"><thead><tr><th>Aktion</th><th>Zeitraum</th><th>Status</th><th>Besetzte Schichten</th><th aria-label="Aktionen"></th></tr></thead><tbody><?php foreach($actions as $a):$open=(int)$a['open_shifts'];$total=(int)$a['total_shifts'];$filled=max(0,$total-$open);$shiftClass=$open===0?'shifts-green':($open<=3?'shifts-yellow':'shifts-red');?><tr><td class="helper-info-cell"><div class="helper-mobile-info"><div class="helper-mobile-title"><?=hh($a['title'])?></div><div class="helper-mobile-date"><?=date('d.m.Y',strtotime($a['start_date']))?> – <?=date('d.m.Y',strtotime($a['end_date']))?></div><div class="helper-mobile-tags"><span class="helper-tag <?=$a['status']?>"><?=['draft'=>'Entwurf','active'=>'Öffentlich aktiv','closed'=>'Geschlossen'][$a['status']]??hh($a['status'])?></span><span class="helper-tag <?=$shiftClass?>"><?=$filled?>/<?=$total?> besetzt</span></div></div></td><td class="helper-actions-cell"><a class="helper-btn helper-icon-btn" href="helferaktion.php?aktion=<?=(int)$a['id']?>" title="Helferaktion bearbeiten" aria-label="Helferaktion bearbeiten"><i class="fa-solid fa-pen"></i></a><a class="helper-btn helper-icon-btn" href="helferbelegung.php?aktion=<?=(int)$a['id']?>" title="Belegung anzeigen" aria-label="Belegung anzeigen"><i class="fa-solid fa-table-cells-large"></i></a></td></tr><?php endforeach;?></tbody></table></div><?php endif;?></section></main></div><script>
+<?php if(!$actions):?><p class="helper-muted">Noch keine Helferaktionen angelegt.</p><?php else:?><div style="overflow-x:auto"><table class="helper-table"><thead><tr><th>Aktion</th><th>Zeitraum</th><th>Status</th><th>Besetzte Schichten</th><th aria-label="Aktionen"></th></tr></thead><tbody><?php foreach($actions as $a):$open=(int)$a['open_shifts'];$total=(int)$a['total_shifts'];$filled=max(0,$total-$open);$shiftClass=$open===0?'shifts-green':($open<=3?'shifts-yellow':'shifts-red');?><tr><td class="helper-info-cell"><span class="helper-desktop-title"><?=hh($a['title'])?></span><div class="helper-mobile-info"><div class="helper-mobile-title"><?=hh($a['title'])?></div><div class="helper-mobile-date"><?=date('d.m.Y',strtotime($a['start_date']))?> – <?=date('d.m.Y',strtotime($a['end_date']))?></div><div class="helper-mobile-tags"><span class="helper-tag <?=$a['status']?>"><?=['draft'=>'Entwurf','active'=>'Öffentlich aktiv','closed'=>'Geschlossen'][$a['status']]??hh($a['status'])?></span><span class="helper-tag <?=$shiftClass?>"><?=$filled?>/<?=$total?> besetzt</span></div></div></td><td class="helper-desktop-only"><?=date('d.m.Y',strtotime($a['start_date']))?> – <?=date('d.m.Y',strtotime($a['end_date']))?></td><td class="helper-desktop-only"><span class="helper-tag <?=$a['status']?>"><?=['draft'=>'Entwurf','active'=>'Öffentlich aktiv','closed'=>'Geschlossen'][$a['status']]??hh($a['status'])?></span></td><td class="helper-desktop-only"><span class="helper-tag <?=$shiftClass?>"><?=$filled?>/<?=$total?> besetzt</span></td><td class="helper-actions-cell"><a class="helper-btn helper-icon-btn" href="helferaktion.php?aktion=<?=(int)$a['id']?>" title="Helferaktion bearbeiten" aria-label="Helferaktion bearbeiten"><i class="fa-solid fa-pen"></i></a><a class="helper-btn helper-icon-btn" href="helferbelegung.php?aktion=<?=(int)$a['id']?>" title="Belegung anzeigen" aria-label="Belegung anzeigen"><i class="fa-solid fa-table-cells-large"></i></a></td></tr><?php endforeach;?></tbody></table></div><?php endif;?></section></main></div><script>
 const toggle=document.getElementById('toggleNewAction'),form=document.getElementById('newActionForm');toggle.addEventListener('click',()=>{form.hidden=!form.hidden;toggle.innerHTML=form.hidden?'<i class="fa-solid fa-plus"></i> Neue Helferaktion anlegen':'<i class="fa-solid fa-minus"></i> Formular schließen';});document.getElementById('cancelNewAction').addEventListener('click',()=>{form.hidden=true;toggle.innerHTML='<i class="fa-solid fa-plus"></i> Neue Helferaktion anlegen';});
 </script></body></html>

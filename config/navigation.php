@@ -67,6 +67,12 @@ return [
         'permission' => 'manage_members',
     ],
     [
+        'label' => 'E-Mail-Vorlagen',
+        'url' => 'mitglieder_email_vorlagen.php',
+        'icon' => 'fas fa-envelope-open-text',
+        'permission' => 'manage_members',
+    ],
+    [
         'label' => 'Benutzerverwaltung',
         'url' => 'users.php',
         'icon' => 'fas fa-users',
