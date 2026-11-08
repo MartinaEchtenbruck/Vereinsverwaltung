@@ -44,7 +44,55 @@ foreach($shiftRows as $row){
 foreach($actions as &$actionRow){$totals=$shiftTotals[(int)$actionRow['id']]??['open'=>0,'total'=>0];$actionRow['open_shifts']=$totals['open'];$actionRow['total_shifts']=$totals['total'];}unset($actionRow);
 $selected=(int)($_GET['aktion']??($actions[0]['id']??0));$q=$db->prepare('SELECT * FROM helper_actions WHERE id=?');$q->execute([$selected]);$action=$q->fetch(PDO::FETCH_ASSOC);$stations=[];$days=[];if($action){$q=$db->prepare('SELECT * FROM helper_stations WHERE action_id=? ORDER BY sort_order,id');$q->execute([$selected]);$stations=$q->fetchAll(PDO::FETCH_ASSOC);$q=$db->prepare('SELECT * FROM helper_days WHERE action_id=? ORDER BY event_date');$q->execute([$selected]);$days=$q->fetchAll(PDO::FETCH_ASSOC);}
 ?><!doctype html><html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Helferlisten</title><link rel="icon" type="image/png" sizes="32x32" href="/intern/assets/icons/favicon.png"><link rel="manifest" href="/intern/manifest.webmanifest"><link rel="stylesheet" href="styles.css"><link rel="stylesheet" href="includes/navigation.css"><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"><style>
-.helper-wrap{max-width:1250px;margin:24px auto}.helper-card{background:#fff;border-radius:12px;padding:20px;margin:18px 0;box-shadow:0 2px 12px #0000000d}.helper-table-header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 0 10px}.helper-table-header h2{margin:0;font-size:1.15rem}.helper-btn{border:0;border-radius:7px;padding:9px 13px;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:7px;background:#e9edf2;color:#202938}.helper-btn.primary{background:#244e79;color:white}.helper-icon-btn{width:34px;height:34px;justify-content:center;padding:0;border-radius:7px;background:#e9edf2;color:#244e79}.helper-table{width:100%;border-collapse:collapse}.helper-table th,.helper-table td{padding:11px 12px;border-bottom:1px solid #e8e8e8;text-align:left;vertical-align:middle}.helper-table th{font-weight:650;color:#34445a}.helper-table tbody tr:hover{background:#f5f7fa}.helper-form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:14px}.helper-field{display:flex;flex-direction:column;gap:5px;font-weight:600;margin:9px 0}.helper-field input,.helper-field textarea{box-sizing:border-box;width:100%;padding:9px 10px;border:1px solid #cbd0d8;border-radius:7px;font:inherit}.helper-alert{padding:12px 15px;border-radius:8px;margin:12px 0;background:#e8f5e9}.helper-alert.error{background:#fdeaea;color:#8b1e1e}.helper-muted{color:#667085;font-size:.9rem}.helper-tag{display:inline-block;border-radius:20px;padding:4px 9px;background:#e8edf1;font-size:.85rem}.helper-tag.active{background:#d9f2df}.helper-tag.closed{background:#ffedcf}.helper-new-form[hidden]{display:none}@media(max-width:650px){.helper-card{padding:12px}.helper-table th,.helper-table td{padding:9px 6px;font-size:.9rem}.helper-table th:nth-child(4),.helper-table td:nth-child(4){display:none}}
+.helper-wrap{max-width:1250px;margin:24px auto}
+.helper-card{background:#fff;border-radius:12px;padding:20px;margin:18px 0;box-shadow:0 2px 12px #0000000d}
+.helper-table-header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 0 10px}
+.helper-table-header h2{margin:0;font-size:1.15rem}
+.helper-btn{border:0;border-radius:7px;padding:9px 13px;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:7px;background:#e9edf2;color:#202938}
+.helper-btn.primary{background:#3498db;color:#fff}
+.helper-icon-btn{width:34px;height:34px;justify-content:center;padding:0;border-radius:7px;background:#e9edf2;color:#3498db}
+.helper-table{width:100%;border-collapse:collapse}
+.helper-table th,.helper-table td{padding:11px 12px;border-bottom:1px solid #e8e8e8;text-align:left;vertical-align:middle}
+.helper-table th{font-weight:650;color:#34445a}
+.helper-table tbody tr:hover{background:#f5f7fa}
+.helper-form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:14px}
+.helper-field{display:flex;flex-direction:column;gap:5px;font-weight:600;margin:9px 0}
+.helper-field input,.helper-field textarea{box-sizing:border-box;width:100%;padding:9px 10px;border:1px solid #cbd0d8;border-radius:7px;font:inherit}
+.helper-alert{padding:12px 15px;border-radius:8px;margin:12px 0;background:#e8f5e9}
+.helper-alert.error{background:#fdeaea;color:#8b1e1e}
+.helper-muted{color:#667085;font-size:.9rem}
+.helper-tag{display:inline-block;border-radius:20px;padding:4px 9px;background:#e8edf1;font-size:.85rem;white-space:nowrap}
+.helper-tag.active{background:#d9f2df;color:#176b35}
+.helper-tag.closed{background:#ffedcf;color:#805400}
+.helper-tag.draft{background:#e8edf1;color:#475467}
+.helper-tag.shifts-red{background:#fde8e7;color:#a12622}
+.helper-tag.shifts-yellow{background:#fff3cd;color:#805b00}
+.helper-tag.shifts-green{background:#d9f2df;color:#176b35}
+.helper-new-form[hidden]{display:none}
+.helper-actions-cell{white-space:nowrap}\n.helper-mobile-info{display:none}
+.helper-actions-cell .helper-btn{margin-right:4px}
+.helper-desktop-date,.helper-desktop-status,.helper-desktop-shifts{display:table-cell}
+@media(max-width:650px){
+  .helper-card{padding:12px}
+  .helper-table{border-collapse:separate;border-spacing:0 10px}
+  .helper-table thead{display:none}
+  .helper-table tbody{display:block}
+  .helper-table tbody tr{display:grid;grid-template-columns:minmax(0,1fr) 38px;grid-template-areas:"info actions";column-gap:10px;align-items:center;padding:13px;border:1px solid #e5e9ee;border-radius:10px;background:#fff;box-shadow:0 1px 4px #00000008}
+  .helper-table tbody tr:hover{background:#fff}
+  .helper-table td{display:block;border:0;padding:0;font-size:.9rem;min-width:0}
+  .helper-table td.helper-info-cell{grid-area:info}
+  .helper-mobile-info{display:flex;flex-direction:column;align-items:flex-start;gap:5px}
+  .helper-mobile-title{font-weight:650;font-size:1rem;color:#253247}
+  .helper-mobile-date{color:#667085;font-size:.85rem}
+  .helper-mobile-tags{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .helper-mobile-tags .helper-tag{margin:0}
+  
+  .helper-table td.helper-actions-cell{grid-area:actions;display:flex;flex-direction:column;align-items:center;justify-self:end;gap:6px;width:38px}
+  .helper-table td.helper-actions-cell .helper-btn{margin:0;flex:0 0 32px}
+  .helper-table-header{gap:8px}
+  #toggleNewAction{width:32px;height:32px;min-width:32px;padding:0;justify-content:center;gap:0;font-size:0;border-radius:7px;flex:0 0 32px}
+  #toggleNewAction i{font-size:1rem;margin:0}
+ }
 </style></head><body><div class="container"><header class="app-page-header"><h1>Helferlisten</h1><?php require $root.'/includes/navigation.php';?></header><main class="helper-wrap">
 <?php if($error):?><div class="helper-alert error"><?=hh($error)?></div><?php endif;?><?php if($notice):?><div class="helper-alert"><?=hh($notice)?></div><?php endif;?>
 <section class="helper-card"><div class="helper-table-header"><h2>Vorhandene Helferaktionen</h2><button type="button" class="helper-btn primary" id="toggleNewAction"><i class="fa-solid fa-plus"></i> Neue Helferaktion anlegen</button></div>
@@ -53,6 +101,6 @@ $selected=(int)($_GET['aktion']??($actions[0]['id']??0));$q=$db->prepare('SELECT
 14:00-16:00
 16:00-18:00
 18:00-19:00</textarea></label><button class="helper-btn primary" type="submit">Aktion anlegen</button><button class="helper-btn" type="button" id="cancelNewAction">Abbrechen</button></form></div>
-<?php if(!$actions):?><p class="helper-muted">Noch keine Helferaktionen angelegt.</p><?php else:?><div style="overflow-x:auto"><table class="helper-table"><thead><tr><th>Aktion</th><th>Zeitraum</th><th>Status</th><th>Stationen</th><th>Offene Schichten</th><th aria-label="Aktionen"></th></tr></thead><tbody><?php foreach($actions as $a):?><tr><td><?=hh($a['title'])?></td><td><?=date('d.m.Y',strtotime($a['start_date']))?> – <?=date('d.m.Y',strtotime($a['end_date']))?></td><td><span class="helper-tag <?=$a['status']==='active'?'active':($a['status']==='closed'?'closed':'')?>"><?=['draft'=>'Entwurf','active'=>'Öffentlich aktiv','closed'=>'Geschlossen'][$a['status']]??hh($a['status'])?></span></td><td><?=$a['station_count']?></td><td><?=((int)$a['open_shifts'])?>/<?=((int)$a['total_shifts'])?></td><td><a class="helper-btn helper-icon-btn" href="helferaktion.php?aktion=<?=(int)$a['id']?>" title="Helferaktion bearbeiten" aria-label="Helferaktion bearbeiten"><i class="fa-solid fa-pen"></i></a> <a class="helper-btn helper-icon-btn" href="helferbelegung.php?aktion=<?=(int)$a['id']?>" title="Belegung anzeigen" aria-label="Belegung anzeigen"><i class="fa-solid fa-table-cells-large"></i></a></td></tr><?php endforeach;?></tbody></table></div><?php endif;?></section></main></div><script>
+<?php if(!$actions):?><p class="helper-muted">Noch keine Helferaktionen angelegt.</p><?php else:?><div style="overflow-x:auto"><table class="helper-table"><thead><tr><th>Aktion</th><th>Zeitraum</th><th>Status</th><th>Besetzte Schichten</th><th aria-label="Aktionen"></th></tr></thead><tbody><?php foreach($actions as $a):$open=(int)$a['open_shifts'];$total=(int)$a['total_shifts'];$filled=max(0,$total-$open);$shiftClass=$open===0?'shifts-green':($open<=3?'shifts-yellow':'shifts-red');?><tr><td class="helper-info-cell"><div class="helper-mobile-info"><div class="helper-mobile-title"><?=hh($a['title'])?></div><div class="helper-mobile-date"><?=date('d.m.Y',strtotime($a['start_date']))?> – <?=date('d.m.Y',strtotime($a['end_date']))?></div><div class="helper-mobile-tags"><span class="helper-tag <?=$a['status']?>"><?=['draft'=>'Entwurf','active'=>'Öffentlich aktiv','closed'=>'Geschlossen'][$a['status']]??hh($a['status'])?></span><span class="helper-tag <?=$shiftClass?>"><?=$filled?>/<?=$total?> besetzt</span></div></div></td><td class="helper-actions-cell"><a class="helper-btn helper-icon-btn" href="helferaktion.php?aktion=<?=(int)$a['id']?>" title="Helferaktion bearbeiten" aria-label="Helferaktion bearbeiten"><i class="fa-solid fa-pen"></i></a><a class="helper-btn helper-icon-btn" href="helferbelegung.php?aktion=<?=(int)$a['id']?>" title="Belegung anzeigen" aria-label="Belegung anzeigen"><i class="fa-solid fa-table-cells-large"></i></a></td></tr><?php endforeach;?></tbody></table></div><?php endif;?></section></main></div><script>
 const toggle=document.getElementById('toggleNewAction'),form=document.getElementById('newActionForm');toggle.addEventListener('click',()=>{form.hidden=!form.hidden;toggle.innerHTML=form.hidden?'<i class="fa-solid fa-plus"></i> Neue Helferaktion anlegen':'<i class="fa-solid fa-minus"></i> Formular schließen';});document.getElementById('cancelNewAction').addEventListener('click',()=>{form.hidden=true;toggle.innerHTML='<i class="fa-solid fa-plus"></i> Neue Helferaktion anlegen';});
 </script></body></html>
