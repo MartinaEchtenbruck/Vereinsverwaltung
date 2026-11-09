@@ -32,8 +32,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['role_action'])) {
         if ($roleName === '') {
             throw new RuntimeException('Bitte geben Sie einen Rollennamen ein.');
         }
-        if (mb_strlen($roleName) > 100) {
-            throw new RuntimeException('Der Rollenname darf höchstens 100 Zeichen lang sein.');
+        if (mb_strlen($roleName) > 50) {
+            throw new RuntimeException('Der Rollenname darf höchstens 50 Zeichen lang sein.');
         }
         if (mb_strlen($roleDescription) > 1000) {
             throw new RuntimeException('Die Beschreibung darf höchstens 1000 Zeichen lang sein.');
@@ -48,7 +48,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['role_action'])) {
             $stmt = $conn->prepare('INSERT INTO roles (role_name, description) VALUES (?, ?)');
             $stmt->execute([$roleName, $roleDescription]);
             $message = 'Die Rolle wurde erfolgreich angelegt.';
-        } elseif ($_POST['role_action'] === 'update') {
+        } elseif (in_array($_POST['role_action'], ['update', 'edit'], true)) {
             $roleId = (int)($_POST['role_id'] ?? 0);
             if ($roleId <= 0) {
                 throw new RuntimeException('Ungültige Rollen-ID.');
@@ -100,8 +100,15 @@ try {
     $database = new Database();
     $conn = $database->getConnection();
     
-    // Alle Rollen laden
-    $stmt = $conn->prepare("SELECT * FROM roles ORDER BY role_name");
+    // Rollen nach Anzahl der zugeordneten Berechtigungen laden:
+    // die Rolle mit den meisten Rechten steht ganz oben.
+    $stmt = $conn->prepare("
+        SELECT r.*, COUNT(DISTINCT rp.permission_id) AS permission_count
+        FROM roles r
+        LEFT JOIN role_permissions rp ON rp.role_id = r.id
+        GROUP BY r.id, r.role_name, r.description, r.created_at
+        ORDER BY permission_count DESC, r.role_name ASC
+    ");
     $stmt->execute();
     $roles = $stmt->fetchAll(PDO::FETCH_ASSOC);
     
