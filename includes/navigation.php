@@ -50,7 +50,7 @@ $navigationGroups = [
     'Sponsoren & Spenden' => ['Sponsorenübersicht', 'Spendenaktion'],
     'Aktionen' => ['Verkäufe & Bestellungen', 'Helferlisten'],
     'Projekte & Aufgaben' => ['Aufgabenübersicht', 'Projekt anlegen', 'Einzelaufgaben', 'Vorlagen'],
-    'Mitgliederverwaltung' => ['Mitgliederübersicht', 'E-Mail-Vorlagen'],
+    'Mitgliederverwaltung' => ['Mitgliederübersicht', 'E-Mail-Vorlagen', 'Mitgliederkommunikation', 'Versandhistorie'],
     'Verwaltung' => ['Benutzerverwaltung', 'Rollen & Rechte'],
 ];
 $dashboardItem = null;

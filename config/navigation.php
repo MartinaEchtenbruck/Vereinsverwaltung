@@ -73,6 +73,18 @@ return [
         'permission' => 'manage_members',
     ],
     [
+        'label' => 'Mitgliederkommunikation',
+        'url' => 'mitglieder_kommunikation.php',
+        'icon' => 'fas fa-paper-plane',
+        'permission' => 'manage_members',
+    ],
+    [
+        'label' => 'Versandhistorie',
+        'url' => 'mitglieder_versandhistorie.php',
+        'icon' => 'fas fa-clock-rotate-left',
+        'permission' => 'manage_members',
+    ],
+    [
         'label' => 'Benutzerverwaltung',
         'url' => 'users.php',
         'icon' => 'fas fa-users',

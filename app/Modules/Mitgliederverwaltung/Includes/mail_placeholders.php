@@ -32,6 +32,11 @@ function getAvailableMailPlaceholders(): array
             'description' => 'Enddatum, formatiert als TT.MM.JJJJ; leer, wenn kein Enddatum hinterlegt ist',
             'source' => 'members.end_date',
         ],
+        'beitrag' => [
+            'label' => 'Beitrag',
+            'description' => 'Mitgliedsbeitrag im deutschen Zahlenformat, z. B. 12,00 €',
+            'source' => 'members.monthly_fee',
+        ],
     ];
 }
 
@@ -73,6 +78,7 @@ function renderMemberMailText(string $text, array $member): string
         'email' => (string)($member['email'] ?? ''),
         'mitglied_seit' => formatMemberMailDate($member['start_date'] ?? null),
         'mitglied_bis' => formatMemberMailDate($member['end_date'] ?? null),
+        'beitrag' => formatMemberMailFee($member['monthly_fee'] ?? null),
     ];
     return preg_replace_callback('/\{\{\s*([a-zA-Z0-9_]+)\s*\}\}/u', static function ($matches) use ($values) {
         $name = $matches[1];
@@ -85,4 +91,51 @@ function formatMemberMailDate($value): string
     if ($value === null || $value === '') return '';
     $date = DateTimeImmutable::createFromFormat('!Y-m-d', (string)$value);
     return $date ? $date->format('d.m.Y') : '';
+}
+
+/** Formatiert den monatlichen Mitgliedsbeitrag im deutschen Zahlenformat. */
+function formatMemberMailFee($value): string
+{
+    if ($value === null || $value === '' || !is_numeric($value)) return '';
+    return number_format((float)$value, 2, ',', '.') . ' €';
+}
+
+
+/**
+ * Bereinigt den Nachrichtentext auf einfache, formatierte E-Mail-Elemente.
+ * Es werden ausschließlich erlaubte Tags ohne Attribute übernommen.
+ */
+function sanitizeMemberMailHtml(string $html): string
+{
+    $html = preg_replace('~<(script|style|iframe|object|embed|svg|math)\b[^>]*>.*?</\1\s*>~is', '', $html) ?? '';
+    $html = preg_replace('~<!--.*?-->~s', '', $html) ?? '';
+    $allowed = '<p><div><br><strong><b><em><i><u><ul><ol><li>';
+    $html = strip_tags($html, $allowed);
+    $html = preg_replace_callback('~</?([a-z0-9]+)\b[^>]*>~i', static function ($m) {
+        $tag = strtolower($m[1]);
+        $allowedTags = ['p','div','br','strong','b','em','i','u','ul','ol','li'];
+        if (!in_array($tag, $allowedTags, true)) return '';
+        return str_starts_with($m[0], '</') ? '</'.$tag.'>' : '<'.$tag.'>';
+    }, $html) ?? '';
+    return trim($html);
+}
+
+/** Rendert Platzhalter in bereinigtem HTML und escaped Mitgliedsdaten als HTML-Text. */
+function renderMemberMailHtml(string $html, array $member): string
+{
+    $values = [
+        'vorname' => (string)($member['first_name'] ?? ''),
+        'nachname' => (string)($member['last_name'] ?? ''),
+        'email' => (string)($member['email'] ?? ''),
+        'mitglied_seit' => formatMemberMailDate($member['start_date'] ?? null),
+        'mitglied_bis' => formatMemberMailDate($member['end_date'] ?? null),
+        'beitrag' => formatMemberMailFee($member['monthly_fee'] ?? null),
+    ];
+    $html = sanitizeMemberMailHtml($html);
+    return preg_replace_callback('/\{\{\s*([a-zA-Z0-9_]+)\s*\}\}/u', static function ($matches) use ($values) {
+        $name = $matches[1];
+        return array_key_exists($name, $values)
+            ? htmlspecialchars($values[$name], ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8')
+            : $matches[0];
+    }, $html) ?? $html;
 }
