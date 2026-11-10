@@ -1,0 +1,285 @@
+﻿booking_date;description;category;tax_area;expected_count;source_file;source_rows
+2023-08-02;Spendenerstattung Hewera-Böcker;Erstattungen / Rückbuchungen;ideell;1;Förderverein-Buchführung-23-24_reduced.CSV;3
+2023-09-28;Spende Schmidt;Spenden;ideell;1;Förderverein-Buchführung-23-24_reduced.CSV;4
+2023-09-30;Kontoführungsgebühr;Organisatorisches;ideell;1;Förderverein-Buchführung-23-24_reduced.CSV;5
+2023-10-31;Mitgliederbeiträge;Mitgliedsbeiträge;ideell;1;Förderverein-Buchführung-23-24_reduced.CSV;6
+2023-11-01;Schleichtiere von privat;Anschaffungen / Projekte Kindergarten;ideell;1;Förderverein-Buchführung-23-24_reduced.CSV;7
+2023-11-02;Weckmann Wertmarkenverkauf;St. Martin;commercial_business;1;Förderverein-Buchführung-23-24_reduced.CSV;8
+2023-11-03;Rückbuchung Mitgliedsbeiträge Schwarz/Müller;Erstattungen / Rückbuchungen;ideell;1;Förderverein-Buchführung-23-24_reduced.CSV;9
+2023-11-08;Kinderküchen;Anschaffungen / Projekte Kindergarten;ideell;1;Förderverein-Buchführung-23-24_reduced.CSV;10
+2023-11-08;Schokolade als Bezahlung für Kapelle St. Martin;St. Martin;ideell;1;Förderverein-Buchführung-23-24_reduced.CSV;11
+2023-11-13;Blumenstrauss für Kapelle St. Martin;St. Martin;ideell;1;Förderverein-Buchführung-23-24_reduced.CSV;12
+2023-11-13;Getränkeverkauf;St. Martin;ideell;1;Förderverein-Buchführung-23-24_reduced.CSV;14
+2023-11-14;Spende Schroers;Spenden;ideell;1;Förderverein-Buchführung-23-24_reduced.CSV;15
+2023-11-15;Sponsorengelder Plenkers;Sponsorenlauf 2023;ideell;1;Förderverein-Buchführung-23-24_reduced.CSV;16
+2023-11-21;Tonie-Figuren;Anschaffungen / Projekte Kindergarten;ideell;1;Förderverein-Buchführung-23-24_reduced.CSV;18
+2023-11-21;Toniebox mit Hülle für Nestgruppe;Anschaffungen / Projekte Kindergarten;ideell;1;Förderverein-Buchführung-23-24_reduced.CSV;19
+2023-11-23;Ebay: Kamera mit Ladekabel für Nestgruppe;Anschaffungen / Projekte Kindergarten;ideell;1;Förderverein-Buchführung-23-24_reduced.CSV;21
+2023-11-25;Tannengrün;Anschaffungen / Projekte Kindergarten;ideell;1;Förderverein-Buchführung-23-24_reduced.CSV;22
+2023-11-27;Adventskranz;Anschaffungen / Projekte Kindergarten;ideell;1;Förderverein-Buchführung-23-24_reduced.CSV;23
+2023-12-15;Rückbuchung Mitgliedsbeiträge Vogel;Erstattungen / Rückbuchungen;ideell;1;Förderverein-Buchführung-23-24_reduced.CSV;24
+2023-12-19;Spende Dornbach;Spenden;ideell;1;Förderverein-Buchführung-23-24_reduced.CSV;25
+2023-12-19;Spende Perret;Spenden;ideell;1;Förderverein-Buchführung-23-24_reduced.CSV;26
+2023-12-29;Kontoführungsgebühr;Organisatorisches;ideell;1;Förderverein-Buchführung-23-24_reduced.CSV;27
+2024-01-04;Landesverband Schulischer Fördervereine Mitgliedsbeitrag;Organisatorisches;ideell;1;Förderverein-Buchführung-23-24_reduced.CSV;28
+2024-03-28;Kontoführungsgebühr;Organisatorisches;ideell;1;Förderverein-Buchführung-23-24_reduced.CSV;29
+2024-04-12;Spende in Bar über Fr. Baas;Spenden;ideell;1;Förderverein-Buchführung-23-24_reduced.CSV;30
+2024-04-15;Provinzial Versicherung;Organisatorisches;ideell;1;Förderverein-Buchführung-23-24_reduced.CSV;31
+2024-04-19;Mallewupp;Aktionen / Ausflüge Kindergarten;ideell;1;Förderverein-Buchführung-23-24_reduced.CSV;32
+2024-04-24;Mallewupp;Aktionen / Ausflüge Kindergarten;ideell;1;Förderverein-Buchführung-23-24_reduced.CSV;33
+2024-04-24;Erstattung Mitgliedsbeitrag J. Huppertz;Erstattungen / Rückbuchungen;ideell;1;Förderverein-Buchführung-23-24_reduced.CSV;34
+2024-04-24;Holzspielzeug (Olesya Blooms);Anschaffungen / Projekte Kindergarten;ideell;1;Förderverein-Buchführung-23-24_reduced.CSV;35
+2024-05-02;Kontoführungsgebühr;Organisatorisches;ideell;1;Förderverein-Buchführung-23-24_reduced.CSV;36
+2024-05-02;Notargebühren;Organisatorisches;ideell;1;Förderverein-Buchführung-23-24_reduced.CSV;37
+2024-05-14;Medaillen Sponsorenlauf;Sponsorenlauf 2024;commercial_business;1;Förderverein-Buchführung-23-24_reduced.CSV;40
+2024-05-22;Theater Blaues Haus;Aktionen / Ausflüge Kindergarten;ideell;1;Förderverein-Buchführung-23-24_reduced.CSV;41
+2024-05-27;Action Einkauf für Tombola;Tombola;purpose_operation;1;Förderverein-Buchführung-23-24_reduced.CSV;42
+2024-05-29;Lose für Tombola;Tombola;purpose_operation;1;Förderverein-Buchführung-23-24_reduced.CSV;43
+2024-06-01;Kuchenverkauf Tag d.o. Tür;Tag der offenen Tür;commercial_business;1;Förderverein-Buchführung-23-24_reduced.CSV;44
+2024-06-06;Bus Fahrscheine;Aktionen / Ausflüge Kindergarten;ideell;1;Förderverein-Buchführung-23-24_reduced.CSV;45
+2024-06-06;Spende Sponsorenlauf;Sponsorenlauf 2024;ideell;1;Förderverein-Buchführung-23-24_reduced.CSV;46
+2024-06-06;Gewinn aus Fotoverkauf;Verkauf der Gruppenfotos;commercial_business;1;Förderverein-Buchführung-23-24_reduced.CSV;47
+2024-06-07;Lose für Tombola;Tombola;purpose_operation;1;Förderverein-Buchführung-23-24_reduced.CSV;48
+2024-06-08;ALDI: Trinkpäckchen und Lollies;Sponsorenlauf 2024;commercial_business;1;Förderverein-Buchführung-23-24_reduced.CSV;49
+2024-06-08;Startgebühren Sponsorenlauf;Sponsorenlauf 2024;commercial_business;1;Förderverein-Buchführung-23-24_reduced.CSV;50
+2024-06-08;Einnahmen Kuchenstand;Sponsorenlauf 2024;commercial_business;1;Förderverein-Buchführung-23-24_reduced.CSV;51
+2024-06-08;Trinkpäckchen Sponsorenlauf;Sponsorenlauf 2024;commercial_business;1;Förderverein-Buchführung-23-24_reduced.CSV;52
+2024-06-08;Sponsorengelder sofort bezahlt;Sponsorenlauf 2024;ideell;1;Förderverein-Buchführung-23-24_reduced.CSV;53
+2024-06-10;Sponsorengeld K. Latten, L. Ingenbleek;Sponsorenlauf 2024;ideell;1;Förderverein-Buchführung-23-24_reduced.CSV;54
+2024-06-11;Sponsorengeld Otto Latten für Hufen;Sponsorenlauf 2024;ideell;1;Förderverein-Buchführung-23-24_reduced.CSV;55
+2024-06-13;Sponsorengeld G. Plenkers, M. David, M. Thomas, L. Weisemüller, W. Vogt, J. Benecke, F. Vogt;Sponsorenlauf 2024;ideell;1;Förderverein-Buchführung-23-24_reduced.CSV;56
+2024-06-14;Sponsorengeld M. Kusber, T. Vogt, M. Abels, T. Arendt;Sponsorenlauf 2024;ideell;1;Förderverein-Buchführung-23-24_reduced.CSV;57
+2024-06-17;Sponsorengeld K. Vogt, K. Voss, M. Echtenbruck, M. Plenkers;Sponsorenlauf 2024;ideell;1;Förderverein-Buchführung-23-24_reduced.CSV;58
+2024-06-18;Sponsorengeld C. Anderheyden;Sponsorenlauf 2024;ideell;1;Förderverein-Buchführung-23-24_reduced.CSV;59
+2024-06-19;Sponsorengeld A. Nager, C. Klaaßen, C. Krämer;Sponsorenlauf 2024;ideell;1;Förderverein-Buchführung-23-24_reduced.CSV;60
+2024-06-21;Sponsorengeld M. Korte, M. Haase;Sponsorenlauf 2024;ideell;1;Förderverein-Buchführung-23-24_reduced.CSV;61
+2024-06-24;Sponsorengeld T. Wende, M. Wenner;Sponsorenlauf 2024;ideell;1;Förderverein-Buchführung-23-24_reduced.CSV;62
+2024-06-25;Sponsorengeld S. Werft;Sponsorenlauf 2024;ideell;1;Förderverein-Buchführung-23-24_reduced.CSV;63
+2024-06-27;Sponsorengeld F. Feldhege;Sponsorenlauf 2024;ideell;1;Förderverein-Buchführung-23-24_reduced.CSV;64
+2024-06-30;Kontoführungsgebühr;Organisatorisches;ideell;1;Förderverein-Buchführung-23-24_reduced.CSV;65
+2024-07-01;Sponsorengeld D. Backes, S. Hanenberg, A. Meyer;Sponsorenlauf 2024;ideell;1;Förderverein-Buchführung-23-24_reduced.CSV;66
+2024-07-03;Eiswagen;Aktionen / Ausflüge Kindergarten;ideell;1;Förderverein-Buchführung-23-24_reduced.CSV;67
+2024-07-05;Kamera für Gruppe 1;Anschaffungen / Projekte Kindergarten;ideell;1;Förderverein-Buchführung-23-24_reduced.CSV;68
+2024-07-05;Sponsorengeld J. Plenkers;Sponsorenlauf 2024;ideell;1;Förderverein-Buchführung-23-24_reduced.CSV;69
+2024-07-08;Spende Maxikinder;Spenden;ideell;1;Förderverein-Buchführung-23-24_reduced.CSV;70
+2024-08-21;Sponsorengeld M. Reitz;Sponsorenlauf 2024;ideell;1;Förderverein-Buchführung-24-25_reduced.CSV;2
+2024-08-22;Sponsorengeld C. Höhle;Sponsorenlauf 2024;ideell;1;Förderverein-Buchführung-24-25_reduced.CSV;3
+2024-08-25;Holzspiration - Kletterset mit Rollenrutsche;Sponsorenlauf 2024 Wunscherfüllung;ideell;1;Förderverein-Buchführung-24-25_reduced.CSV;6
+2024-08-25;Betzold - Experimentiersets und diverse weitere;Sponsorenlauf 2024 Wunscherfüllung;ideell;1;Förderverein-Buchführung-24-25_reduced.CSV;7
+2024-08-26;Backwinkel - Holzpferd;Sponsorenlauf 2024 Wunscherfüllung;ideell;1;Förderverein-Buchführung-24-25_reduced.CSV;8
+2024-08-26;Widmaier - Magnetische Zählstäbchen;Sponsorenlauf 2024 Wunscherfüllung;ideell;1;Förderverein-Buchführung-24-25_reduced.CSV;9
+2024-09-04;Milch, Schokoküsse;Kindersachen-Flohmarkt September 2024;commercial_business;1;Förderverein-Buchführung-24-25_reduced.CSV;10
+2024-09-15;Protavis/Schallwerk Kiddies Gehörschutz für Kinder 12x;Anschaffungen / Projekte Kindergarten;ideell;1;Förderverein-Buchführung-24-25_reduced.CSV;14
+2024-09-30;Kontoführungsgebühr;Organisatorisches;ideell;1;Förderverein-Buchführung-24-25_reduced.CSV;15
+2024-10-12;Kuchenverkauf;Tag der offenen Tür (Oktober);commercial_business;1;Förderverein-Buchführung-24-25_reduced.CSV;16
+2024-10-20;Wertmarkenverkauf Weckmänner;St. Martin;commercial_business;1;Förderverein-Buchführung-24-25_reduced.CSV;17
+2024-10-21;Backwinkel - Outdoor Haus / Baumstammtier;Sponsorenlauf 2024 Wunscherfüllung;ideell;1;Förderverein-Buchführung-24-25_reduced.CSV;18
+2024-10-31;Einzüge der Mitgliedsbeiträge;Mitgliedsbeiträge;ideell;1;Förderverein-Buchführung-24-25_reduced.CSV;19
+2024-11-04;Erstattung Mitgliedsbeitrag Lara Wittig;Erstattungen / Rückbuchungen;ideell;1;Förderverein-Buchführung-24-25_reduced.CSV;20
+2024-11-05;Münzzählbrett;Organisatorisches;ideell;1;Förderverein-Buchführung-24-25_reduced.CSV;21
+2024-11-05;Keraflott Keramikgießpulver;Weihnachtsmarkt;commercial_business;1;Förderverein-Buchführung-24-25_reduced.CSV;22
+2024-11-07;Spiegelburg: div Artikel als Gewinne für die Tombola;Weihnachtsmarkt;purpose_operation;1;Förderverein-Buchführung-24-25_reduced.CSV;23
+2024-11-12;Spende von unbekannt;Spenden;ideell;1;Förderverein-Buchführung-24-25_reduced.CSV;25
+2024-11-12;Getränkeverkauf;St. Martin;ideell;1;Förderverein-Buchführung-24-25_reduced.CSV;26
+2024-11-18;Holzspielzeug - Olesya Booms - Spielend Lernen;Anschaffungen / Projekte Kindergarten;ideell;1;Förderverein-Buchführung-24-25_reduced.CSV;28
+2024-11-19;Tonies (Lichterkinder & Weihnachtsbäckerei) für die Nestgruppe;Anschaffungen / Projekte Kindergarten;ideell;1;Förderverein-Buchführung-24-25_reduced.CSV;29
+2024-11-19;Stabkerzen (120Stk.);Weihnachtsmarkt;commercial_business;1;Förderverein-Buchführung-24-25_reduced.CSV;30
+2024-11-19;Stumpenkerzen (40 Stk.);Weihnachtsmarkt;commercial_business;1;Förderverein-Buchführung-24-25_reduced.CSV;31
+2024-11-19;Lose;Tombola;purpose_operation;1;Förderverein-Buchführung-24-25_reduced.CSV;32
+2024-11-19;Spende für Tombola 10€ Niola, 50€ Fotograf;Spenden;ideell;1;Förderverein-Buchführung-24-25_reduced.CSV;33
+2024-11-23;Verkauf Fensterbild;Weihnachtsmarkt;commercial_business;1;Förderverein-Buchführung-24-25_reduced.CSV;34
+2024-11-28;Kisten für Tombola Gewinne;Tombola;ideell;1;Förderverein-Buchführung-24-25_reduced.CSV;35
+2024-11-28;Lautsprecher;Anschaffungen / Projekte Kindergarten;ideell;1;Förderverein-Buchführung-24-25_reduced.CSV;37
+2024-11-28;Lose;Tombola;purpose_operation;1;Förderverein-Buchführung-24-25_reduced.CSV;38
+2024-12-09;Tannengrün für Adventsdekoration;Anschaffungen / Projekte Kindergarten;ideell;1;Förderverein-Buchführung-24-25_reduced.CSV;43
+2024-12-30;Kontoführungsgebühr;Organisatorisches;ideell;1;Förderverein-Buchführung-24-25_reduced.CSV;44
+2025-01-05;Einnahmen Weihnachtsverkauf im Eingangsbereich;Weihnachtsverkauf im Kindergarten;commercial_business;1;Förderverein-Buchführung-24-25_reduced.CSV;45
+2025-01-07;Mitgliedsbeitrag LV Schulischer Fördervereine;Organisatorisches;ideell;1;Förderverein-Buchführung-24-25_reduced.CSV;46
+2025-01-27;Kisten für Tombola Gewinne;Tombola;ideell;1;Förderverein-Buchführung-24-25_reduced.CSV;47
+2025-01-27;Haba Pro - Bilderbuchregal;Sponsorenlauf 2024 Wunscherfüllung;ideell;1;Förderverein-Buchführung-24-25_reduced.CSV;48
+2025-02-11;Keramikgießpulver für den Osterverkauf;Osterverkauf im Kindergarten;commercial_business;1;Förderverein-Buchführung-24-25_reduced.CSV;49
+2025-02-13;Akustikmöbel (TimKid);Anschaffungen / Projekte Kindergarten;ideell;1;Förderverein-Buchführung-24-25_reduced.CSV;50
+2025-02-13;Tonieboxen;Anschaffungen / Projekte Kindergarten;ideell;1;Förderverein-Buchführung-24-25_reduced.CSV;51
+2025-03-31;Kontoführungsgebühr;Organisatorisches;ideell;1;Förderverein-Buchführung-24-25_reduced.CSV;52
+2025-04-07;Tassen für Geburtstagsgeschenke, Baumwollsäckchen, Straßenkreide, Malspiegel, Spiegeltangram (Wiemann Lehrmittel);Anschaffungen / Projekte Kindergarten;ideell;1;Förderverein-Buchführung-24-25_reduced.CSV;53
+2025-04-15;Provinzial;Organisatorisches;ideell;1;Förderverein-Buchführung-24-25_reduced.CSV;54
+2025-04-28;Einnahmen vom Osterverkauf;Osterverkauf im Kindergarten;commercial_business;1;Förderverein-Buchführung-24-25_reduced.CSV;55
+2025-05-05;Lose;Tombola;purpose_operation;1;Förderverein-Buchführung-24-25_reduced.CSV;56
+2025-05-07;Einnahmen vom Osterverkauf;Osterverkauf im Kindergarten;commercial_business;1;Förderverein-Buchführung-24-25_reduced.CSV;57
+2025-05-08;Ausflug Mallewupp;Kindergarten Ausflüge;ideell;1;Förderverein-Buchführung-24-25_reduced.CSV;58
+2025-05-09;Ausflug Mallewupp;Kindergarten Ausflüge;ideell;1;Förderverein-Buchführung-24-25_reduced.CSV;59
+2025-05-10;Einnahmen Tombola;Flohmarkt im Mai;purpose_operation;1;Förderverein-Buchführung-24-25_reduced.CSV;60
+2025-05-10;Einnahmen Kuchenverkauf etc.;Flohmarkt im Mai;commercial_business;1;Förderverein-Buchführung-24-25_reduced.CSV;61
+2025-05-10;Barspende Kaminska / Wenner;Spenden;ideell;1;Förderverein-Buchführung-24-25_reduced.CSV;62
+2025-05-10;Schokoküsse, Kaffee, Würfelzucker;Flohmarkt im Mai;commercial_business;1;Förderverein-Buchführung-24-25_reduced.CSV;63
+2025-06-03;Ausflug Maxikinder zum Musenhof;Kindergarten Ausflüge;ideell;1;Förderverein-Buchführung-24-25_reduced.CSV;65
+2025-06-30;Kontoführungsgebühr;Organisatorisches;ideell;1;Förderverein-Buchführung-24-25_reduced.CSV;66
+2025-07-08;Eiswagen: 91 Eis;Kindergarten Aktionen;ideell;1;Förderverein-Buchführung-24-25_reduced.CSV;67
+2025-07-12;Spende der Maxi-Kinder;Spenden;ideell;1;Förderverein-Buchführung-24-25_reduced.CSV;68
+2025-07-24;Lose;Tombola;purpose_operation;1;Förderverein-Buchführung-24-25_reduced.CSV;69
+2025-09-03;Spende für Rutsche von Jo + Kilian;Spenden;ideell;1;Förderverein-Buchführung-25-26_reduced.CSV;4
+2025-09-23;Spende Kevin und Susanne Voss;Spenden;ideell;1;Förderverein-Buchführung-25-26_reduced.CSV;6
+2025-09-27;Tombola;Sponsorenlauf;purpose_operation;1;Förderverein-Buchführung-25-26_reduced.CSV;7
+2025-09-27;Kuchenstand;Sponsorenlauf;commercial_business;1;Förderverein-Buchführung-25-26_reduced.CSV;8
+2025-09-27;Startgebühren;Sponsorenlauf;commercial_business;1;Förderverein-Buchführung-25-26_reduced.CSV;9
+2025-09-27;Sponsorengelder (Guillen, Großmann, Swysen, Golücke);Sponsorenlauf;ideell;1;Förderverein-Buchführung-25-26_reduced.CSV;10
+2025-09-29;Sponsorengeld Tanja Wende;Sponsorenlauf;ideell;1;Förderverein-Buchführung-25-26_reduced.CSV;11
+2025-09-29;Weckmann Wertmarken-Verkauf;St. Martin;commercial_business;1;Förderverein-Buchführung-25-26_reduced.CSV;12
+2025-09-29;Gruppenfoto Verkauf aus 24/25;Aktionen;commercial_business;1;Förderverein-Buchführung-25-26_reduced.CSV;13
+2025-09-30;Sponsorengeld Elena Schroers;Sponsorenlauf;ideell;1;Förderverein-Buchführung-25-26_reduced.CSV;14
+2025-09-30;Sponsorengeld Andrea Jahnke für Inka Breuer;Sponsorenlauf;ideell;1;Förderverein-Buchführung-25-26_reduced.CSV;15
+2025-09-30;Sponsorengeld Miriam Klaßen;Sponsorenlauf;ideell;1;Förderverein-Buchführung-25-26_reduced.CSV;16
+2025-09-30;Sponsorengeld Andrea Klose;Sponsorenlauf;ideell;1;Förderverein-Buchführung-25-26_reduced.CSV;17
+2025-09-30;Kontoabschluss;Organisatorisches;ideell;1;Förderverein-Buchführung-25-26_reduced.CSV;18
+2025-10-01;Sponsorengeld Nils und Jennifer Borsch;Sponsorenlauf;ideell;1;Förderverein-Buchführung-25-26_reduced.CSV;19
+2025-10-01;Sponsorengeld Isabel Hoffmann für Julia Perret;Sponsorenlauf;ideell;1;Förderverein-Buchführung-25-26_reduced.CSV;20
+2025-10-01;Sponsorengeld Christiane Kuhn für Julia Perret;Sponsorenlauf;ideell;1;Förderverein-Buchführung-25-26_reduced.CSV;21
+2025-10-01;Sponsorengeld Manfred und Ursula Breuer für Inka Breuer;Sponsorenlauf;ideell;1;Förderverein-Buchführung-25-26_reduced.CSV;22
+2025-10-01;Elisabeth Peter-Perret für J. Perret;Sponsorenlauf;ideell;1;Förderverein-Buchführung-25-26_reduced.CSV;23
+2025-10-02;Sponsorengeld Josephine, Kilan und Isa Forsbach;Sponsorenlauf;ideell;1;Förderverein-Buchführung-25-26_reduced.CSV;24
+2025-10-02;Sponsorengeld Jenny Reiser für Leon;Sponsorenlauf;ideell;1;Förderverein-Buchführung-25-26_reduced.CSV;25
+2025-10-02;Sponsorengeld Kai Perret für Julia Perret;Sponsorenlauf;ideell;1;Förderverein-Buchführung-25-26_reduced.CSV;26
+2025-10-02;Sponsorengeld Nadine Plenkers;Sponsorenlauf;ideell;1;Förderverein-Buchführung-25-26_reduced.CSV;27
+2025-10-02;Sponsorengeld Fabienne Moehren;Sponsorenlauf;ideell;1;Förderverein-Buchführung-25-26_reduced.CSV;28
+2025-10-02;Sponsorengeld Florian Perret;Sponsorenlauf;ideell;1;Förderverein-Buchführung-25-26_reduced.CSV;29
+2025-10-02;Sponsorengeld Ulrich Peter Hoffmann;Sponsorenlauf;ideell;1;Förderverein-Buchführung-25-26_reduced.CSV;30
+2025-10-07;Sponsorengeld Kurt Wilhelm für PErret;Sponsorenlauf;ideell;1;Förderverein-Buchführung-25-26_reduced.CSV;31
+2025-10-07;Sponsorengeld Martina Mayer für Perret;Sponsorenlauf;ideell;1;Förderverein-Buchführung-25-26_reduced.CSV;32
+2025-10-08;Sponsorengeld Silke Kremer;Sponsorenlauf;ideell;1;Förderverein-Buchführung-25-26_reduced.CSV;33
+2025-10-08;Sponsorengeld Christian Schroers;Sponsorenlauf;ideell;1;Förderverein-Buchführung-25-26_reduced.CSV;34
+2025-10-09;Sponsorengeld Carina Wilhelm für Perret;Sponsorenlauf;ideell;1;Förderverein-Buchführung-25-26_reduced.CSV;35
+2025-10-10;Sponsorengeld Alexander Wende;Sponsorenlauf;ideell;1;Förderverein-Buchführung-25-26_reduced.CSV;38
+2025-10-10;Sponsorengeld Stefanie Hanenberg;Sponsorenlauf;ideell;1;Förderverein-Buchführung-25-26_reduced.CSV;39
+2025-10-10;Rückerstattung Christian Schroers: Zu viel bezahltes Sponsorengeld;Erstattungen / Rückbuchungen;ideell;1;Förderverein-Buchführung-25-26_reduced.CSV;40
+2025-10-11;Spende der Apotheke;Spenden;ideell;1;Förderverein-Buchführung-25-26_reduced.CSV;42
+2025-10-16;Sponsorengeld Sophia Höhle;Sponsorenlauf;ideell;1;Förderverein-Buchführung-25-26_reduced.CSV;43
+2025-10-21;Sponsorengeld Kaminska;Sponsorenlauf;ideell;1;Förderverein-Buchführung-25-26_reduced.CSV;44
+2025-10-31;Einzüge der Mitgliedsbeiträge;Mitgliedsbeiträge;ideell;1;Förderverein-Buchführung-25-26_reduced.CSV;45
+2025-11-07;Lose;Tombola;purpose_operation;1;Förderverein-Buchführung-25-26_reduced.CSV;46
+2025-11-10;Spende Steinbau GmbH;Spenden;ideell;1;Förderverein-Buchführung-25-26_reduced.CSV;47
+2025-11-10;Spende Rewe Stiftung;Spenden;ideell;1;Förderverein-Buchführung-25-26_reduced.CSV;48
+2025-11-12;Martinskapelle;St. Martin;ideell;1;Förderverein-Buchführung-25-26_reduced.CSV;49
+2025-11-12;Medaillen;Sponsorenlauf;commercial_business;1;Förderverein-Buchführung-25-26_reduced.CSV;50
+2025-11-12;Weihnachtsmarkt RTV Standgebühr;Weihnachtsmarkt RTV;purpose_operation;1;Förderverein-Buchführung-25-26_reduced.CSV;51
+2025-11-14;Anonyme Spende zur freien Verfügung der Gruppen;Spenden;ideell;1;Förderverein-Buchführung-25-26_reduced.CSV;53
+2025-11-15;Tombola beim TVK;Weihnachtsmarkt TVK;purpose_operation;1;Förderverein-Buchführung-25-26_reduced.CSV;54
+2025-11-17;tedox KG Spiegelkacheln und Zubehör Gruppe 2;Anschaffungen / Projekte Kindergarten;ideell;1;Förderverein-Buchführung-25-26_reduced.CSV;55
+2025-11-17;Mitgliedsbeitrag Melissa Golücke;Mitgliedsbeiträge;ideell;1;Förderverein-Buchführung-25-26_reduced.CSV;56
+2025-11-17;Sponsorengeld Jessica Hasterok;Sponsorenlauf;ideell;1;Förderverein-Buchführung-25-26_reduced.CSV;57
+2025-11-18;IKEA Einkauf der Gruppen aus separater Spende, Restsumme aus Quittung privat bezahlt.;Anschaffungen / Projekte Kindergarten;ideell;1;Förderverein-Buchführung-25-26_reduced.CSV;58
+2025-11-19;ACTION Weihnachtsbeleuchtung Gruppe 2;Anschaffungen / Projekte Kindergarten;ideell;1;Förderverein-Buchführung-25-26_reduced.CSV;59
+2025-11-20;Liederbuch Frühling / Sommer;Anschaffungen / Projekte Kindergarten;ideell;1;Förderverein-Buchführung-25-26_reduced.CSV;60
+2025-11-30;Tombola RTV Weihnachtsmarkt;Weihnachtsmarkt RTV;purpose_operation;1;Förderverein-Buchführung-25-26_reduced.CSV;63
+2025-11-30;Tannengrün für die Gruppen;Anschaffungen / Projekte Kindergarten;ideell;1;Förderverein-Buchführung-25-26_reduced.CSV;65
+2025-12-01;Einnahmen Weihnachtsbasar im KiGa;Weihnachtsbasar im Kindergarten;commercial_business;1;Förderverein-Buchführung-25-26_reduced.CSV;66
+2025-12-01;Nachträglicher Losverkauf;Tombola privat;purpose_operation;1;Förderverein-Buchführung-25-26_reduced.CSV;67
+2025-12-01;Uhren;Anschaffungen / Projekte Kindergarten;ideell;1;Förderverein-Buchführung-25-26_reduced.CSV;68
+2025-12-02;ACTION: Türmatte und Körbe;Anschaffungen / Projekte Kindergarten;ideell;1;Förderverein-Buchführung-25-26_reduced.CSV;72
+2025-12-04;Amazon: Lernspielzeug;Anschaffungen / Projekte Kindergarten;ideell;1;Förderverein-Buchführung-25-26_reduced.CSV;74
+2025-12-12;Laura Michaelsen;Spenden;ideell;1;Förderverein-Buchführung-25-26_reduced.CSV;75
+2025-12-14;Kristalle;Anschaffungen / Projekte Kindergarten;ideell;1;Förderverein-Buchführung-25-26_reduced.CSV;76
+2025-12-16;Amazon: Magnetische Kachelbausteine;Anschaffungen / Projekte Kindergarten;ideell;1;Förderverein-Buchführung-25-26_reduced.CSV;77
+2025-12-16;Tombola Ausverkauf im Kindergarten;Tombola privat;purpose_operation;1;Förderverein-Buchführung-25-26_reduced.CSV;78
+2025-12-17;Elena Schroers;Mitgliedsbeiträge;ideell;1;Förderverein-Buchführung-25-26_reduced.CSV;79
+2025-12-18;Keramikverkauf;Weihnachtsbasar im Kindergarten;commercial_business;1;Förderverein-Buchführung-25-26_reduced.CSV;80
+2025-12-19;Magnetspielzeug;Anschaffungen / Projekte Kindergarten;ideell;1;Förderverein-Buchführung-25-26_reduced.CSV;81
+2025-12-22;Rutsche;Anschaffungen / Projekte Kindergarten;ideell;1;Förderverein-Buchführung-25-26_reduced.CSV;82
+2025-12-22;Neukirchner Erziehungsverein;Zuschuss Rutsche;ideell;1;Förderverein-Buchführung-25-26_reduced.CSV;83
+2025-12-29;Konstantin Klat;Spenden;ideell;1;Förderverein-Buchführung-25-26_reduced.CSV;84
+2025-12-30;Tanja Wende;Spenden;ideell;1;Förderverein-Buchführung-25-26_reduced.CSV;85
+2025-12-30;Kontoführungsgebühr;Organisatorisches;ideell;1;Förderverein-Buchführung-25-26_reduced.CSV;86
+2026-01-08;Landesverband Schulischer Fördervereine;Mitgliedsbeiträge;ideell;1;Förderverein-Buchführung-25-26_reduced.CSV;87
+2026-01-12;Waffeleisen;Anschaffungen / Projekte Kindergarten;commercial_business;1;Förderverein-Buchführung-25-26_reduced.CSV;88
+2026-01-15;Otto: Gymnastik/Massageballl (Gruppe 4);Anschaffungen / Projekte Kindergarten;ideell;1;Förderverein-Buchführung-25-26_reduced.CSV;89
+2026-02-04;Keramikverkauf;Weihnachtsbasar im Kindergarten;commercial_business;1;Förderverein-Buchführung-25-26_reduced.CSV;90
+2026-02-23;Balanciersteine;Anschaffungen / Projekte Kindergarten;ideell;1;Förderverein-Buchführung-25-26_reduced.CSV;91
+2026-03-05;Action: Tischstaffelei und Künstlerbedarf (Gruppe 4);Anschaffungen / Projekte Kindergarten;ideell;1;Förderverein-Buchführung-25-26_reduced.CSV;93
+2026-03-16;Eierkartons;Anschaffungen / Projekte Kindergarten;ideell;1;Förderverein-Buchführung-25-26_reduced.CSV;94
+2026-03-24;MMS ECommerce;Anschaffungen / Projekte Kindergarten;ideell;1;Förderverein-Buchführung-25-26_reduced.CSV;95
+2026-03-31;Kontoführungsgebühr;Organisatorisches;ideell;1;Förderverein-Buchführung-25-26_reduced.CSV;96
+2026-04-02;Mawi;Anschaffungen / Projekte Kindergarten;ideell;1;Förderverein-Buchführung-25-26_reduced.CSV;97
+2026-04-07;Spende Klat;Spenden;ideell;1;Förderverein-Buchführung-25-26_reduced.CSV;98
+2026-04-15;Provinzial Versicherung;Organisatorisches;ideell;1;Förderverein-Buchführung-25-26_reduced.CSV;99
+2026-04-24;Mitgliedsbeiträge Giera und Breuer;Mitgliedsbeiträge;ideell;1;Förderverein-Buchführung-25-26_reduced.CSV;100
+2026-04-29;Rossmann: Uhr für Gruppe 4;Anschaffungen / Projekte Kindergarten;ideell;1;Förderverein-Buchführung-25-26_reduced.CSV;101
+2026-04-29;Otto: Lernspielzeug Chiffon-Tücher (Gruppe 4);Anschaffungen / Projekte Kindergarten;ideell;1;Förderverein-Buchführung-25-26_reduced.CSV;102
+2026-05-22;Mawi;Anschaffungen / Projekte Kindergarten;ideell;1;Förderverein-Buchführung-25-26_reduced.CSV;103
+2026-06-02;Medaillen;Sponsorenlauf 06/26;commercial_business;1;Förderverein-Buchführung-25-26_reduced.CSV;104
+2026-06-04;Amazon: Magnetische Bausteine;Anschaffungen / Projekte Kindergarten;ideell;1;Förderverein-Buchführung-25-26_reduced.CSV;105
+2026-06-09;Otto: Fischertechnik Bausteine;Anschaffungen / Projekte Kindergarten;ideell;1;Förderverein-Buchführung-25-26_reduced.CSV;106
+2026-06-09;Edeka: Uno Spielkarten;Anschaffungen / Projekte Kindergarten;ideell;1;Förderverein-Buchführung-25-26_reduced.CSV;107
+2026-06-09;Amazon: Lichterkette;Anschaffungen / Projekte Kindergarten;ideell;1;Förderverein-Buchführung-25-26_reduced.CSV;108
+2026-06-19;"Schissels Puppenkiste: ""Hexe Elvira""";Veranstaltungen / Ausflüge;ideell;1;Förderverein-Buchführung-25-26_reduced.CSV;109
+2026-06-22;Maxi Kinder Ausflug zum Musenhof;Veranstaltungen / Ausflüge;ideell;1;Förderverein-Buchführung-25-26_reduced.CSV;110
+2026-06-24;Raiffeisen-Markt: Ventilatoren wg. großer Hitze;Anschaffungen / Projekte Kindergarten;ideell;1;Förderverein-Buchführung-25-26_reduced.CSV;111
+2026-06-25;LidL: Ventilatoren wegen extremer Hitze;Anschaffungen / Projekte Kindergarten;ideell;1;Förderverein-Buchführung-25-26_reduced.CSV;112
+2026-06-29;Einnahmen von der Rutscheneinweihung;Veranstaltungen / Ausflüge;ideell;1;Förderverein-Buchführung-25-26_reduced.CSV;113
+2026-06-29;Gutschrift Mawi;Anschaffungen / Projekte Kindergarten;ideell;1;Förderverein-Buchführung-25-26_reduced.CSV;115
+2026-06-30;Kontoabschluss;Organisatorisches;ideell;1;Förderverein-Buchführung-25-26_reduced.CSV;116
+2026-07-13;Aldi Spiele;Anschaffungen / Projekte Kindergarten;ideell;1;Förderverein-Buchführung-25-26_reduced.CSV;117
+2026-08-06;TeDi Dekomaterialien;Anschaffungen / Projekte Kindergarten;ideell;1;Förderverein-Buchführung-26-27_reduced.CSV;2
+2026-09-18;Grillwürstchen;Sommerfest;commercial_business;1;Förderverein-Buchführung-26-27_reduced.CSV;3
+2026-09-19;Kuchen- und Würstchenverkauf;Sommerfest;commercial_business;1;Förderverein-Buchführung-26-27_reduced.CSV;4
+2026-09-19;Spende;Sommerfest;ideell;1;Förderverein-Buchführung-26-27_reduced.CSV;5
+2026-09-29;Aldi: Aktivitätsbuch Gruppe 2;Anschaffungen / Projekte Kindergarten;ideell;1;Förderverein-Buchführung-26-27_reduced.CSV;10
+2026-09-30;Kontoabschluss;Organisatorisches;ideell;1;Förderverein-Buchführung-26-27_reduced.CSV;11
+2026-10-06;Spende Volksbank;Spende;ideell;1;Förderverein-Buchführung-26-27_reduced.CSV;12
+2026-10-12;Amazon: Kinder-Schrank-Sicherung (Gruppe 2);Anschaffungen / Projekte Kindergarten;ideell;1;Förderverein-Buchführung-26-27_reduced.CSV;13
+2026-10-17;Wasserspiel;Sponsorenlauf Oktober 26;commercial_business;1;Förderverein-Buchführung-26-27_reduced.CSV;14
+2026-10-17;Teilnahmegebühren;Sponsorenlauf Oktober 26;commercial_business;1;Förderverein-Buchführung-26-27_reduced.CSV;15
+2026-10-17;Sponsorengelder;Sponsorenlauf Oktober 26;ideell;1;Förderverein-Buchführung-26-27_reduced.CSV;16
+2026-10-17;Kuchenverkauf;Sponsorenlauf Oktober 26;commercial_business;1;Förderverein-Buchführung-26-27_reduced.CSV;17
+2026-10-21;RTV: Holzhütten-Miete;RTV Weihnachtsmarkt;purpose_operation;1;Förderverein-Buchführung-26-27_reduced.CSV;18
+2026-10-22;Spende Kruppa;Spende;ideell;2;Förderverein-Buchführung-26-27_reduced.CSV;19,20
+2026-10-23;Sponsorengeld Reiser;Sponsorenlauf Oktober 26;ideell;1;Förderverein-Buchführung-26-27_reduced.CSV;21
+2026-10-26;Sponsorengeld Kondryn;Sponsorenlauf Oktober 26;ideell;1;Förderverein-Buchführung-26-27_reduced.CSV;22
+2026-10-26;Sponsorengeld Klaßen;Sponsorenlauf Oktober 26;ideell;1;Förderverein-Buchführung-26-27_reduced.CSV;23
+2026-10-26;Sponsorengeld Lackmann;Sponsorenlauf Oktober 26;ideell;1;Förderverein-Buchführung-26-27_reduced.CSV;24
+2026-10-26;Sponsorengeld Zweig;Sponsorenlauf Oktober 26;ideell;1;Förderverein-Buchführung-26-27_reduced.CSV;25
+2026-10-26;Sponsorengeld Möhren;Sponsorenlauf Oktober 26;ideell;1;Förderverein-Buchführung-26-27_reduced.CSV;26
+2026-10-26;Weckmann Wertmarkenverkauf;St. Martin;commercial_business;1;Förderverein-Buchführung-26-27_reduced.CSV;27
+2026-10-26;Sponsorengeld Großmann;Sponsorenlauf Oktober 26;ideell;1;Förderverein-Buchführung-26-27_reduced.CSV;28
+2026-10-28;Sponsorengeld Michaelsen;Sponsorenlauf Oktober 26;ideell;1;Förderverein-Buchführung-26-27_reduced.CSV;29
+2026-10-30;Sponsorengeld Perret;Sponsorenlauf Oktober 26;ideell;1;Förderverein-Buchführung-26-27_reduced.CSV;30
+2026-10-30;Mitgliedsbeitrag Schroers;Mitgliedsbeiträge;ideell;1;Förderverein-Buchführung-26-27_reduced.CSV;31
+2026-10-30;Mitgliedsbeitrag Giera;Mitgliedsbeiträge;ideell;1;Förderverein-Buchführung-26-27_reduced.CSV;32
+2026-10-30;Mitgliedsbeitrag Zweig;Mitgliedsbeiträge;ideell;1;Förderverein-Buchführung-26-27_reduced.CSV;33
+2026-10-30;Mitgliedsbeitrag Lackmann;Mitgliedsbeiträge;ideell;1;Förderverein-Buchführung-26-27_reduced.CSV;34
+2026-10-30;Mitgliedsbeitrag Karabulut-Uyük;Mitgliedsbeiträge;ideell;1;Förderverein-Buchführung-26-27_reduced.CSV;35
+2026-10-30;Mitgliedsbeitrag Wende, Christine;Mitgliedsbeiträge;ideell;1;Förderverein-Buchführung-26-27_reduced.CSV;36
+2026-10-30;Mitgliedsbeitrag Golücke;Mitgliedsbeiträge;ideell;1;Förderverein-Buchführung-26-27_reduced.CSV;37
+2026-10-30;Mitgliedsbeitrag Kondryn;Mitgliedsbeiträge;ideell;1;Förderverein-Buchführung-26-27_reduced.CSV;38
+2026-10-30;Mitgliedsbeitrag Schütze;Mitgliedsbeiträge;ideell;1;Förderverein-Buchführung-26-27_reduced.CSV;39
+2026-10-30;Mitgliedsbeitrag Gordon;Mitgliedsbeiträge;ideell;1;Förderverein-Buchführung-26-27_reduced.CSV;40
+2026-10-30;Mitgliedsbeitrag Breuer;Mitgliedsbeiträge;ideell;1;Förderverein-Buchführung-26-27_reduced.CSV;41
+2026-10-30;Mitgliedsbeitrag Chamberlain;Mitgliedsbeiträge;ideell;1;Förderverein-Buchführung-26-27_reduced.CSV;42
+2026-10-30;Mitgliedsbeitrag Hoderlein;Mitgliedsbeiträge;ideell;1;Förderverein-Buchführung-26-27_reduced.CSV;43
+2026-10-30;Mitgliedsbeitrag Möhren;Mitgliedsbeiträge;ideell;1;Förderverein-Buchführung-26-27_reduced.CSV;44
+2026-10-30;Mitgliedsbeitrag Regier;Mitgliedsbeiträge;ideell;1;Förderverein-Buchführung-26-27_reduced.CSV;45
+2026-10-30;Mitgliedsbeitrag Kremer;Mitgliedsbeiträge;ideell;1;Förderverein-Buchführung-26-27_reduced.CSV;46
+2026-10-30;Mitgliedsbeitrag Op de Drinck;Mitgliedsbeiträge;ideell;1;Förderverein-Buchführung-26-27_reduced.CSV;47
+2026-10-30;Mitgliedsbeitrag Voss;Mitgliedsbeiträge;ideell;1;Förderverein-Buchführung-26-27_reduced.CSV;48
+2026-10-30;Mitgliedsbeitrag Köpp;Mitgliedsbeiträge;ideell;1;Förderverein-Buchführung-26-27_reduced.CSV;49
+2026-10-30;Mitgliedsbeitrag Pfützenreuter;Mitgliedsbeiträge;ideell;1;Förderverein-Buchführung-26-27_reduced.CSV;50
+2026-10-30;Mitgliedsbeitrag Perret;Mitgliedsbeiträge;ideell;1;Förderverein-Buchführung-26-27_reduced.CSV;51
+2026-10-30;Mitgliedsbeitrag Kuhn;Mitgliedsbeiträge;ideell;1;Förderverein-Buchführung-26-27_reduced.CSV;52
+2026-10-30;Mitgliedsbeitrag Nikulin;Mitgliedsbeiträge;ideell;1;Förderverein-Buchführung-26-27_reduced.CSV;53
+2026-10-30;Mitgliedsbeitrag Kremer, Silke+Christian;Mitgliedsbeiträge;ideell;1;Förderverein-Buchführung-26-27_reduced.CSV;54
+2026-10-30;Mitgliedsbeitrag Echtenbruck;Mitgliedsbeiträge;ideell;1;Förderverein-Buchführung-26-27_reduced.CSV;55
+2026-10-30;Mitgliedsbeitrag Wagner;Mitgliedsbeiträge;ideell;1;Förderverein-Buchführung-26-27_reduced.CSV;56
+2026-10-30;Mitgliedsbeitrag Wende, Tanja;Mitgliedsbeiträge;ideell;1;Förderverein-Buchführung-26-27_reduced.CSV;57
+2026-10-30;Mitgliedsbeitrag Greschuck;Mitgliedsbeiträge;ideell;1;Förderverein-Buchführung-26-27_reduced.CSV;58
+2026-10-30;Mitgliedsbeitrag Korte;Mitgliedsbeiträge;ideell;1;Förderverein-Buchführung-26-27_reduced.CSV;59
+2026-10-30;Mitgliedsbeitrag Anderheyden;Mitgliedsbeiträge;ideell;1;Förderverein-Buchführung-26-27_reduced.CSV;60
+2026-10-30;Mitgliedsbeitrag Börsch;Mitgliedsbeiträge;ideell;1;Förderverein-Buchführung-26-27_reduced.CSV;61
+2026-10-30;Mitgliedsbeitrag Plenkers;Mitgliedsbeiträge;ideell;1;Förderverein-Buchführung-26-27_reduced.CSV;62
+2026-10-30;Mitgliedsbeitrag Albrecht;Mitgliedsbeiträge;ideell;1;Förderverein-Buchführung-26-27_reduced.CSV;63
+2026-10-30;Mitgliedsbeitrag Schüren-HInkelmann;Mitgliedsbeiträge;ideell;1;Förderverein-Buchführung-26-27_reduced.CSV;64
+2026-10-30;Mitgliedsbeitrag Mausehund;Mitgliedsbeiträge;ideell;1;Förderverein-Buchführung-26-27_reduced.CSV;65
+2026-10-30;Mitgliedsbeitrag Witte;Mitgliedsbeiträge;ideell;1;Förderverein-Buchführung-26-27_reduced.CSV;66
+2026-10-30;Mitgliedsbeitrag Baas;Mitgliedsbeiträge;ideell;1;Förderverein-Buchführung-26-27_reduced.CSV;67
+2026-10-30;Mitgliedsbeitrag Gröters;Mitgliedsbeiträge;ideell;1;Förderverein-Buchführung-26-27_reduced.CSV;68
+2026-11-02;Treppen / Türenschutzgitter;Anschaffungen / Projekte Kindergarten;ideell;1;Förderverein-Buchführung-26-27_reduced.CSV;69
+2026-11-05;IKEA für Gr. 3 (Andrea);Anschaffungen / Projekte Kindergarten;ideell;1;Förderverein-Buchführung-26-27_reduced.CSV;70
+2026-11-10;St. Martins Kapelle;St. Martin;ideell;1;Förderverein-Buchführung-26-27_reduced.CSV;72
+2026-11-16;ALDI: Kaffee Pulver;Sponsorenlauf Oktober 26;commercial_business;1;Förderverein-Buchführung-26-27_reduced.CSV;73

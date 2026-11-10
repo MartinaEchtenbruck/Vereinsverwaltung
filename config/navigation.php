@@ -85,6 +85,12 @@ return [
         'permission' => 'manage_members',
     ],
     [
+        'label' => 'Buchungen',
+        'url' => 'buchungen.php',
+        'icon' => 'fas fa-book',
+        'permission' => 'manage_accounting',
+    ],
+    [
         'label' => 'Benutzerverwaltung',
         'url' => 'users.php',
         'icon' => 'fas fa-users',

@@ -51,6 +51,7 @@ $navigationGroups = [
     'Aktionen' => ['Verkäufe & Bestellungen', 'Helferlisten'],
     'Projekte & Aufgaben' => ['Aufgabenübersicht', 'Projekt anlegen', 'Einzelaufgaben', 'Vorlagen'],
     'Mitgliederverwaltung' => ['Mitgliederübersicht', 'E-Mail-Vorlagen', 'Mitgliederkommunikation', 'Versandhistorie'],
+    'Buchführung' => ['Buchungen'],
     'Verwaltung' => ['Benutzerverwaltung', 'Rollen & Rechte'],
 ];
 $dashboardItem = null;
