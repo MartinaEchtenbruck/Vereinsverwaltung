@@ -166,3 +166,15 @@
     .pm-tabs a { font-size: 14px; }
     .pm-project-card { padding: 13px; }
 }
+
+
+/* Aufgaben: kompakte Detailaktionen und letzter Kommentar in der Übersicht */
+.pm-task-detail-tile{padding:15px 17px}
+.pm-task-detail-head{gap:12px}
+.pm-task-detail-head h2{margin:5px 0 3px;font-size:1.35rem}
+.pm-task-detail-tile>p{margin:8px 0}
+.pm-task-detail-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:10px 0 12px;padding-top:10px;border-top:1px solid rgba(70,90,100,.16)}
+.pm-task-detail-actions form{display:inline-flex;margin:0}
+.pm-task-last-comment{margin-top:6px;padding:7px 9px;border:1px solid var(--project-color,#DCEAF0);border-left:4px solid var(--project-color,#DCEAF0);border-radius:6px;background:var(--project-color,#DCEAF0);font-size:11px;line-height:1.35;color:#263238;overflow-wrap:anywhere}
+.pm-task-last-comment small{color:#78858b;font-size:10px}
+.pm-task-tile .pm-task-status-actions{margin-top:7px}
