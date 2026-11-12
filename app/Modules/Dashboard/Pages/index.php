@@ -72,50 +72,109 @@ if ($showFundraisingWidget) {
     }
 }
 if ($showProjectTasks) {
-    require_once $appRoot . '/db_connection.php';
-    $database = new Database();
-    $dashboardDb = $database->getConnection();
-    $dashboardDb->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-    if (empty($_SESSION['pm_csrf'])) $_SESSION['pm_csrf'] = bin2hex(random_bytes(32));
-    $dashboardCsrf = $_SESSION['pm_csrf'];
-    $query = $dashboardDb->query("SELECT t.id, t.title, t.start_date, t.due_date, t.status, t.assigned_user_id, p.title AS project_title, p.color AS project_color, u.full_name AS assignee, 0 AS is_standalone
-        FROM tasks t JOIN projects p ON p.id=t.project_id
-        LEFT JOIN users u ON u.id=t.assigned_user_id
-        WHERE p.status='active' AND t.status<>'done'
-        UNION ALL
-        SELECT s.id, s.title, s.start_date, s.due_date, s.status, s.assigned_user_id, NULL AS project_title, '#DCEAF0' AS project_color, u.full_name AS assignee, 1 AS is_standalone
-        FROM standalone_tasks s
-        LEFT JOIN users u ON u.id=s.assigned_user_id
-        WHERE s.status<>'done'
-        ORDER BY due_date, id");
-    $dashboardTasks = $query->fetchAll(PDO::FETCH_ASSOC);
-    $today = new DateTimeImmutable('today');
-    $monday = new DateTimeImmutable('monday this week');
-    $nextMonday = $monday->modify('+1 week');
-    $afterNextMonday = $monday->modify('+2 weeks');
-    $fourWeeks = $monday->modify('+4 weeks');
-    foreach ($dashboardTasks as $task) {
-        // Ohne Fälligkeit bleibt die Aufgabe außerhalb der Übersicht.
-        if (!$task['due_date']) continue;
-        $due = new DateTimeImmutable($task['due_date']);
+    try {
+        require_once $appRoot . '/db_connection.php';
+        $database = new Database();
+        $dashboardDb = $database->getConnection();
+        $dashboardDb->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+        if (empty($_SESSION['pm_csrf'])) $_SESSION['pm_csrf'] = bin2hex(random_bytes(32));
+        $dashboardCsrf = $_SESSION['pm_csrf'];
 
-        // Eine abgelaufene Frist hat immer Vorrang vor dem Startdatum.
-        if ($due < $today) {
-            $group = 'overdue';
-        } else {
-            // Früher sichtbar machen: primär nach Arbeitsbeginn gruppieren.
-            // Bereits gestartete Aufgaben ohne überfällige Frist bleiben in "Diese Woche".
-            $start = !empty($task['start_date'])
-                ? new DateTimeImmutable($task['start_date'])
-                : $due;
-            if ($start < $today) $start = $today;
+        // Erst die bisherige, bewährte Aufgabenabfrage ausführen. Kommentare werden
+        // anschließend separat geladen, damit ein Fehler dort das Dashboard nicht blockiert.
+        $query = $dashboardDb->query("SELECT t.id, t.title, t.start_date, t.due_date, t.status, t.assigned_user_id, p.title AS project_title, p.color AS project_color, u.full_name AS assignee, 0 AS is_standalone
+            FROM tasks t JOIN projects p ON p.id=t.project_id
+            LEFT JOIN users u ON u.id=t.assigned_user_id
+            WHERE p.status='active' AND t.status<>'done'
+            UNION ALL
+            SELECT s.id, s.title, s.start_date, s.due_date, s.status, s.assigned_user_id, NULL AS project_title, '#DCEAF0' AS project_color, u.full_name AS assignee, 1 AS is_standalone
+            FROM standalone_tasks s
+            LEFT JOIN users u ON u.id=s.assigned_user_id
+            WHERE s.status<>'done'
+            ORDER BY due_date, id");
+        $dashboardTasks = $query->fetchAll(PDO::FETCH_ASSOC);
 
-            if ($start < $nextMonday) $group = 'this_week';
-            elseif ($start < $afterNextMonday) $group = 'next_week';
-            elseif ($start < $fourWeeks) $group = 'demnaechst';
-            else continue;
+        // Neueste Kommentare projektbezogener Aufgaben separat ermitteln.
+        $taskIds = [];
+        $standaloneIds = [];
+        foreach ($dashboardTasks as $task) {
+            if (!empty($task['is_standalone'])) $standaloneIds[] = (int)$task['id'];
+            else $taskIds[] = (int)$task['id'];
         }
-        $dashboardGroups[$group][] = $task;
+        $latestComments = [];
+        if ($taskIds) {
+            try {
+                $placeholders = implode(',', array_fill(0, count($taskIds), '?'));
+                $commentStmt = $dashboardDb->prepare("SELECT c.task_id AS parent_id, c.comment, u.full_name AS author
+                    FROM task_comments c LEFT JOIN users u ON u.id=c.user_id
+                    WHERE c.task_id IN ($placeholders) ORDER BY c.created_at ASC, c.id ASC");
+                $commentStmt->execute($taskIds);
+                while ($comment = $commentStmt->fetch(PDO::FETCH_ASSOC)) {
+                    $latestComments['task-' . (int)$comment['parent_id']] = [
+                        'comment' => (string)$comment['comment'],
+                        'author' => (string)($comment['author'] ?? '')
+                    ];
+                }
+            } catch (Throwable $e) {
+                error_log('Dashboard-Aufgabenkommentare (Projekte): ' . $e->getMessage());
+            }
+        }
+        if ($standaloneIds) {
+            try {
+                $placeholders = implode(',', array_fill(0, count($standaloneIds), '?'));
+                $commentStmt = $dashboardDb->prepare("SELECT c.standalone_task_id AS parent_id, c.comment, u.full_name AS author
+                    FROM standalone_task_comments c LEFT JOIN users u ON u.id=c.user_id
+                    WHERE c.standalone_task_id IN ($placeholders) ORDER BY c.created_at ASC, c.id ASC");
+                $commentStmt->execute($standaloneIds);
+                while ($comment = $commentStmt->fetch(PDO::FETCH_ASSOC)) {
+                    $latestComments['standalone-' . (int)$comment['parent_id']] = [
+                        'comment' => (string)$comment['comment'],
+                        'author' => (string)($comment['author'] ?? '')
+                    ];
+                }
+            } catch (Throwable $e) {
+                error_log('Dashboard-Aufgabenkommentare (Einzelaufgaben): ' . $e->getMessage());
+            }
+        }
+        foreach ($dashboardTasks as &$task) {
+            $commentKey = (!empty($task['is_standalone']) ? 'standalone-' : 'task-') . (int)$task['id'];
+            $task['last_comment'] = $latestComments[$commentKey]['comment'] ?? '';
+            $task['last_comment_author'] = $latestComments[$commentKey]['author'] ?? '';
+        }
+        unset($task);
+
+        $today = new DateTimeImmutable('today');
+        $monday = new DateTimeImmutable('monday this week');
+        $nextMonday = $monday->modify('+1 week');
+        $afterNextMonday = $monday->modify('+2 weeks');
+        $fourWeeks = $monday->modify('+4 weeks');
+        foreach ($dashboardTasks as $task) {
+            // Ohne Fälligkeit bleibt die Aufgabe außerhalb der Übersicht.
+            if (!$task['due_date']) continue;
+            $due = new DateTimeImmutable($task['due_date']);
+
+            // Eine abgelaufene Frist hat immer Vorrang vor dem Startdatum.
+            if ($due < $today) {
+                $group = 'overdue';
+            } else {
+                // Primär nach Arbeitsbeginn gruppieren.
+                $start = !empty($task['start_date'])
+                    ? new DateTimeImmutable($task['start_date'])
+                    : $due;
+                if ($start < $today) $start = $today;
+
+                if ($start < $nextMonday) $group = 'this_week';
+                elseif ($start < $afterNextMonday) $group = 'next_week';
+                elseif ($start < $fourWeeks) $group = 'demnaechst';
+                else continue;
+            }
+            $dashboardGroups[$group][] = $task;
+        }
+    } catch (Throwable $e) {
+        error_log('Dashboard-Aufgabenwidget: ' . $e->getMessage());
+        // Die übrigen Dashboard-Bereiche bleiben auch bei einem Fehler im Aufgabenwidget sichtbar.
+        $dashboardTasks = [];
+        $dashboardGroups = ['overdue'=>[], 'this_week'=>[], 'next_week'=>[], 'demnaechst'=>[]];
     }
 }
 function dashboardEscape($value): string { return htmlspecialchars((string)$value, ENT_QUOTES, 'UTF-8'); }
@@ -205,6 +264,9 @@ $fundraisingProgress = $fundraisingStats['total'] > 0
                                     <article class="pm-task-row pm-task-tile" style="--project-color:<?= dashboardEscape($taskColor) ?>" data-task-url="<?= $taskUrl ?>" tabindex="0" role="link" aria-label="Aufgabe öffnen: <?= dashboardEscape($task['title']) ?>">
                                         <a class="pm-task-title" href="<?= $taskUrl ?>"><?= dashboardEscape($task['title']) ?></a>
                                         <div class="pm-task-project"><?= $isStandalone ? 'Projektunabhängige Aufgabe' : dashboardEscape($task['project_title']) ?></div>
+                                        <?php if (!empty($task['last_comment'])): $lastComment = (string)$task['last_comment']; $commentChars = preg_split('//u', $lastComment, -1, PREG_SPLIT_NO_EMPTY); if ($commentChars !== false && count($commentChars) > 140) $lastComment = implode('', array_slice($commentChars, 0, 140)) . '[...]'; ?>
+                                            <div class="pm-task-last-comment"><?= dashboardEscape($lastComment) ?><?php if (!empty($task['last_comment_author'])): ?><small> · <?= dashboardEscape($task['last_comment_author']) ?></small><?php endif; ?></div>
+                                        <?php endif; ?>
                                         <?php if (!empty($task['assignee'])): ?><div class="pm-task-meta"><span class="pm-assignee">Übernommen: <?= dashboardEscape($task['assignee']) ?></span></div><?php endif; ?>
                                         <div class="pm-task-status-actions" aria-label="Aufgabenstatus ändern">
                                             <?php if ($task['status'] !== 'in_progress'): ?>
