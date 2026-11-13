@@ -80,27 +80,19 @@ if ($showProjectTasks) {
         if (empty($_SESSION['pm_csrf'])) $_SESSION['pm_csrf'] = bin2hex(random_bytes(32));
         $dashboardCsrf = $_SESSION['pm_csrf'];
 
-        // Erst die bisherige, bewährte Aufgabenabfrage ausführen. Kommentare werden
-        // anschließend separat geladen, damit ein Fehler dort das Dashboard nicht blockiert.
-        $query = $dashboardDb->query("SELECT t.id, t.title, t.start_date, t.due_date, t.status, t.assigned_user_id, p.title AS project_title, p.color AS project_color, u.full_name AS assignee, 0 AS is_standalone
-            FROM tasks t JOIN projects p ON p.id=t.project_id
+        // Alle offenen Aufgaben stammen aus der gemeinsamen tasks-Tabelle.
+        $query = $dashboardDb->query("SELECT t.id, t.title, t.start_date, t.due_date, t.status, t.assigned_user_id,
+                p.title AS project_title, COALESCE(p.color, '#DCEAF0') AS project_color,
+                u.full_name AS assignee, (t.project_id IS NULL) AS is_standalone
+            FROM tasks t
+            LEFT JOIN projects p ON p.id=t.project_id
             LEFT JOIN users u ON u.id=t.assigned_user_id
-            WHERE p.status='active' AND t.status<>'done'
-            UNION ALL
-            SELECT s.id, s.title, s.start_date, s.due_date, s.status, s.assigned_user_id, NULL AS project_title, '#DCEAF0' AS project_color, u.full_name AS assignee, 1 AS is_standalone
-            FROM standalone_tasks s
-            LEFT JOIN users u ON u.id=s.assigned_user_id
-            WHERE s.status<>'done'
-            ORDER BY due_date, id");
+            WHERE t.status<>'done' AND (t.project_id IS NULL OR p.status='active')
+            ORDER BY t.due_date, t.id");
         $dashboardTasks = $query->fetchAll(PDO::FETCH_ASSOC);
 
-        // Neueste Kommentare projektbezogener Aufgaben separat ermitteln.
-        $taskIds = [];
-        $standaloneIds = [];
-        foreach ($dashboardTasks as $task) {
-            if (!empty($task['is_standalone'])) $standaloneIds[] = (int)$task['id'];
-            else $taskIds[] = (int)$task['id'];
-        }
+        // Kommentare aller Aufgaben werden über dieselbe task_id geladen.
+        $taskIds = array_map('intval', array_column($dashboardTasks, 'id'));
         $latestComments = [];
         if ($taskIds) {
             try {
@@ -116,28 +108,11 @@ if ($showProjectTasks) {
                     ];
                 }
             } catch (Throwable $e) {
-                error_log('Dashboard-Aufgabenkommentare (Projekte): ' . $e->getMessage());
-            }
-        }
-        if ($standaloneIds) {
-            try {
-                $placeholders = implode(',', array_fill(0, count($standaloneIds), '?'));
-                $commentStmt = $dashboardDb->prepare("SELECT c.standalone_task_id AS parent_id, c.comment, u.full_name AS author
-                    FROM standalone_task_comments c LEFT JOIN users u ON u.id=c.user_id
-                    WHERE c.standalone_task_id IN ($placeholders) ORDER BY c.created_at ASC, c.id ASC");
-                $commentStmt->execute($standaloneIds);
-                while ($comment = $commentStmt->fetch(PDO::FETCH_ASSOC)) {
-                    $latestComments['standalone-' . (int)$comment['parent_id']] = [
-                        'comment' => (string)$comment['comment'],
-                        'author' => (string)($comment['author'] ?? '')
-                    ];
-                }
-            } catch (Throwable $e) {
-                error_log('Dashboard-Aufgabenkommentare (Einzelaufgaben): ' . $e->getMessage());
+                error_log('Dashboard-Aufgabenkommentare: ' . $e->getMessage());
             }
         }
         foreach ($dashboardTasks as &$task) {
-            $commentKey = (!empty($task['is_standalone']) ? 'standalone-' : 'task-') . (int)$task['id'];
+            $commentKey = 'task-' . (int)$task['id'];
             $task['last_comment'] = $latestComments[$commentKey]['comment'] ?? '';
             $task['last_comment_author'] = $latestComments[$commentKey]['author'] ?? '';
         }
@@ -260,7 +235,7 @@ $fundraisingProgress = $fundraisingStats['total'] > 0
                                 <h3><?= dashboardEscape($groupLabel) ?><span><?= count($dashboardGroups[$groupKey]) ?></span></h3>
                                 <?php if (!$dashboardGroups[$groupKey]): ?><p class="pm-empty">Keine Aufgaben</p>
                                 <?php else: foreach ($dashboardGroups[$groupKey] as $task): $taskColor = dashboardColor($task['project_color'] ?? null); ?>
-                                    <?php $isStandalone = !empty($task['is_standalone']); $taskUrl = $isStandalone ? 'projects.php?view=standalone_task&amp;id=' . (int)$task['id'] : 'projects.php?view=task&amp;id=' . (int)$task['id']; $statusAction = $isStandalone ? 'set_standalone_task_status' : 'set_task_status'; $idField = $isStandalone ? 'standalone_task_id' : 'task_id'; ?>
+                                    <?php $isStandalone = !empty($task['is_standalone']); $taskUrl = 'projects.php?view=task&amp;id=' . (int)$task['id']; $statusAction = 'set_task_status'; $idField = 'task_id'; ?>
                                     <article class="pm-task-row pm-task-tile" style="--project-color:<?= dashboardEscape($taskColor) ?>" data-task-url="<?= $taskUrl ?>" tabindex="0" role="link" aria-label="Aufgabe öffnen: <?= dashboardEscape($task['title']) ?>">
                                         <a class="pm-task-title" href="<?= $taskUrl ?>"><?= dashboardEscape($task['title']) ?></a>
                                         <div class="pm-task-project"><?= $isStandalone ? 'Projektunabhängige Aufgabe' : dashboardEscape($task['project_title']) ?></div>
