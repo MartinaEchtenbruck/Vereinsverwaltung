@@ -32,6 +32,26 @@ try {
     updateExpiredMemberStatuses($conn);
     $crypto = new MemberEncryption($appRoot);
     $conn->exec("INSERT INTO member_number_sequence (id,last_issued_number) VALUES (1,0) ON DUPLICATE KEY UPDATE id=VALUES(id)");
+    // Mandatsreferenzen haben einen eigenen, dauerhaft fortgeschriebenen Nummernkreis.
+    // Bereits vergebene (verschlüsselte) Referenzen werden einmal pro Seitenaufruf
+    // entschlüsselt, damit die Sequenz auch bei älteren Bestandsdaten korrekt startet.
+    $conn->exec("INSERT INTO mandate_reference_sequence (id,last_issued_reference) VALUES (1,20150225) ON DUPLICATE KEY UPDATE id=VALUES(id)");
+    $existingRefs = $conn->query("SELECT mandate_reference_enc FROM members WHERE mandate_reference_enc IS NOT NULL AND mandate_reference_enc <> ''")->fetchAll(PDO::FETCH_COLUMN);
+    $maxMandateReference = 20150225;
+    foreach ($existingRefs as $storedReference) {
+        $plainReference = trim((string)$crypto->decrypt($storedReference));
+        if ($plainReference !== '' && preg_match('/^\d+$/', $plainReference)) {
+            $maxMandateReference = max($maxMandateReference, (int)$plainReference);
+        }
+    }
+    $syncMandateSequence = $conn->prepare('UPDATE mandate_reference_sequence SET last_issued_reference=GREATEST(last_issued_reference, ?) WHERE id=1');
+    $syncMandateSequence->execute([$maxMandateReference]);
+    $bicSuggestions = [];
+    $storedBics = $conn->query("SELECT DISTINCT bic_enc FROM members WHERE bic_enc IS NOT NULL AND bic_enc <> ''")->fetchAll(PDO::FETCH_COLUMN);
+    foreach ($storedBics as $storedBic) {
+        $plainBic = strtoupper(trim((string)$crypto->decrypt($storedBic)));
+        if ($plainBic !== '') $bicSuggestions[$plainBic] = true;
+    }
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (!hash_equals($csrf, (string)($_POST['csrf_token'] ?? ''))) throw new RuntimeException('Sitzung abgelaufen. Bitte lade die Seite neu.');
         $action = (string)($_POST['action'] ?? '');
@@ -56,9 +76,18 @@ try {
             $v['iban'] = implode(' ', [substr($iban,0,4),substr($iban,4,4),substr($iban,8,4),substr($iban,12,4),substr($iban,16,4),substr($iban,20,2)]);
             $dup=$conn->prepare('SELECT id FROM members WHERE member_number=? AND id<>?'); $dup->execute([$number,$id]);
             if ($dup->fetchColumn()) throw new RuntimeException('Diese Mitgliedsnummer ist bereits vergeben.');
+            $conn->beginTransaction();
+            $seqStmt = $conn->query('SELECT last_issued_reference FROM mandate_reference_sequence WHERE id=1 FOR UPDATE');
+            $lastMandateReference = (int)$seqStmt->fetchColumn();
+            if ($id === 0) {
+                // Bei Neuanlage immer serverseitig vergeben; ein veraltetes Formular
+                // kann dadurch keine bereits vergebene Referenz erneut verwenden.
+                $v['mandate_reference'] = (string)($lastMandateReference + 1);
+            } elseif ($v['mandate_reference'] !== '' && preg_match('/^\d+$/', $v['mandate_reference'])) {
+                $lastMandateReference = max($lastMandateReference, (int)$v['mandate_reference']);
+            }
             $enc = fn($key) => $crypto->encrypt($v[$key] === '' ? null : $v[$key]);
             $data = [$number,$v['last_name'],$v['first_name'],$enc('street'),$enc('postal_code'),$enc('city'),$enc('phone'),$enc('mobile'),$enc('email'),number_format((float)$fee,2,'.',''),$enc('account_holder'),$enc('bank_name'),$enc('iban'),$enc('bic'),$duration,$v['start_date'],$end,$enc('mandate_reference'),$enc('comment')];
-            $conn->beginTransaction();
             if ($id > 0) {
                 $check=$conn->prepare('SELECT id FROM members WHERE id=?');$check->execute([$id]);if(!$check->fetchColumn()) throw new RuntimeException('Mitglied nicht gefunden.');
                 $sql='UPDATE members SET member_number=?,last_name=?,first_name=?,street_enc=?,postal_code_enc=?,city_enc=?,phone_enc=?,mobile_enc=?,email_enc=?,monthly_fee=?,account_holder_enc=?,bank_name_enc=?,iban_enc=?,bic_enc=?,duration_years=?,start_date=?,end_date=?,mandate_reference_enc=?,comment_enc=? WHERE id=?';
@@ -68,7 +97,18 @@ try {
                 $conn->prepare($sql)->execute($data);
             }
             $conn->prepare('UPDATE member_number_sequence SET last_issued_number=GREATEST(last_issued_number,?) WHERE id=1')->execute([$number]);
+            if ($v['mandate_reference'] !== '' && preg_match('/^\d+$/', $v['mandate_reference'])) {
+                $conn->prepare('UPDATE mandate_reference_sequence SET last_issued_reference=GREATEST(last_issued_reference,?) WHERE id=1')->execute([(int)$v['mandate_reference']]);
+            }
+            $newMemberId = $id > 0 ? $id : (int)$conn->lastInsertId();
             $conn->commit();
+            if ($id === 0 && $newMemberId > 0) {
+                if (!isset($_SESSION['new_member_communication_ids']) || !is_array($_SESSION['new_member_communication_ids'])) {
+                    $_SESSION['new_member_communication_ids'] = [];
+                }
+                $_SESSION['new_member_communication_ids'][] = $newMemberId;
+                $_SESSION['new_member_communication_ids'] = array_values(array_unique(array_map('intval', $_SESSION['new_member_communication_ids'])));
+            }
             header('Location: mitglieder.php?meldung='.rawurlencode($id?'Mitglied wurde gespeichert.':'Mitglied wurde angelegt.')); exit;
         }
         if ($action === 'terminate') {
@@ -101,6 +141,7 @@ try {
     $q=$conn->query('SELECT last_issued_number FROM member_number_sequence WHERE id=1'); $lastIssued=(int)$q->fetchColumn();
     $q=$conn->query('SELECT COALESCE(MAX(member_number),0) FROM members'); $lastIssued=max($lastIssued,(int)$q->fetchColumn());
     $nextNumber=$lastIssued+1;
+    $nextMandateReference = (int)$conn->query('SELECT last_issued_reference FROM mandate_reference_sequence WHERE id=1')->fetchColumn() + 1;
     if (isset($_GET['edit'])) {
         $q=$conn->prepare('SELECT * FROM members WHERE id=?');$q->execute([(int)$_GET['edit']]);$r=$q->fetch(PDO::FETCH_ASSOC);if(!$r)throw new RuntimeException('Mitglied nicht gefunden.');
         $editing=['id'=>$r['id'],'member_number'=>$r['member_number'],'last_name'=>$r['last_name'],'first_name'=>$r['first_name'],'street'=>$crypto->decrypt($r['street_enc']),'postal_code'=>$crypto->decrypt($r['postal_code_enc']),'city'=>$crypto->decrypt($r['city_enc']),'phone'=>$crypto->decrypt($r['phone_enc']),'mobile'=>$crypto->decrypt($r['mobile_enc']),'email'=>$crypto->decrypt($r['email_enc']),'monthly_fee'=>$r['monthly_fee'],'account_holder'=>$crypto->decrypt($r['account_holder_enc']),'bank_name'=>$crypto->decrypt($r['bank_name_enc']),'iban'=>$crypto->decrypt($r['iban_enc']),'bic'=>$crypto->decrypt($r['bic_enc']),'duration_years'=>$r['duration_years'],'start_date'=>$r['start_date'],'end_date'=>$r['end_date'],'mandate_reference'=>$crypto->decrypt($r['mandate_reference_enc']),'comment'=>$crypto->decrypt($r['comment_enc'])];
@@ -126,6 +167,34 @@ try {
     $kgStart = new DateTimeImmutable(sprintf('%04d-08-01', $kgStartYear));
     $kgEnd = new DateTimeImmutable(sprintf('%04d-07-31', $kgStartYear + 1));
     $memberStats = ['count'=>count($rows), 'ending'=>0, 'monthly_cents'=>0, 'yearly_cents'=>0];
+    // Jubiläumsanzeige: Krönchen während des gesamten Kalenderjahres des Jubiläums.
+    $shiftCalendarMonths = static function (DateTimeImmutable $date, int $months): DateTimeImmutable {
+        $target = $date->modify('first day of this month')->modify(($months >= 0 ? '+' : '').$months.' months');
+        $day = min((int)$date->format('j'), (int)$target->modify('last day of this month')->format('j'));
+        return $target->setDate((int)$target->format('Y'), (int)$target->format('n'), $day);
+    };
+    $currentCalendarYear = (int)$today->format('Y');
+    $anniversaryMilestones = [10,20,25,30,40];
+    foreach ($rows as &$memberRow) {
+        $memberRow['anniversary_years'] = null;
+        $memberRow['anniversary_date'] = null;
+        if (empty($memberRow['start_date'])) continue;
+        $entry = new DateTimeImmutable($memberRow['start_date']);
+        foreach ($anniversaryMilestones as $milestone) {
+            $year = (int)$entry->format('Y') + $milestone;
+            $month = (int)$entry->format('n');
+            $day = min((int)$entry->format('j'), (int)(new DateTimeImmutable(sprintf('%04d-%02d-01', $year, $month)))->modify('last day of this month')->format('j'));
+            $anniversary = $entry->setDate($year, $month, $day);
+            $membershipEnd = !empty($memberRow['end_date']) ? new DateTimeImmutable($memberRow['end_date']) : null;
+            if ($membershipEnd && $membershipEnd < $anniversary) continue;
+            if ((int)$anniversary->format('Y') === $currentCalendarYear) {
+                $memberRow['anniversary_years'] = $milestone;
+                $memberRow['anniversary_date'] = $anniversary->format('Y-m-d');
+                break;
+            }
+        }
+    }
+    unset($memberRow);
     // Beiträge werden ausschließlich monatsweise berechnet. Der Eintrittsmonat zählt vollständig.
     // Es gibt keinen vorzeitigen Austritt; die Zahlung läuft bis zum Ende des Kindergartenjahres.
     $kgStartMonthIndex = $kgStartYear * 12 + 8;
@@ -152,9 +221,9 @@ try {
     }
 } catch (Throwable $e) {
     if (isset($conn) && $conn instanceof PDO && $conn->inTransaction()) $conn->rollBack();
-    $error = $e->getMessage(); $rows=$rows??[]; $nextNumber=$nextNumber??1;
+    $error = $e->getMessage(); $rows=$rows??[]; $nextNumber=$nextNumber??1; $nextMandateReference=$nextMandateReference??20150226; $bicSuggestions=$bicSuggestions??[];
 }
-$blank=['member_number'=>$nextNumber??1,'last_name'=>'','first_name'=>'','street'=>'','postal_code'=>'','city'=>'','phone'=>'','mobile'=>'','email'=>'','monthly_fee'=>'','account_holder'=>'','bank_name'=>'','iban'=>'','bic'=>'','duration_years'=>'','start_date'=>'','end_date'=>'','mandate_reference'=>'','comment'=>''];
+$blank=['member_number'=>$nextNumber??1,'last_name'=>'','first_name'=>'','street'=>'','postal_code'=>'','city'=>'','phone'=>'','mobile'=>'','email'=>'','monthly_fee'=>'','account_holder'=>'','bank_name'=>'','iban'=>'','bic'=>'','duration_years'=>'','start_date'=>'','end_date'=>'','mandate_reference'=>(string)($nextMandateReference??20150226),'comment'=>'',];
 $showNewForm = $editing !== null || (isset($_GET['neu']) && $_GET['neu'] === '1');
 $form=$editing??$blank;
 if (!$editing && $form['account_holder']==='') $form['account_holder']=trim($form['last_name'].', '.$form['first_name'], ', ');
@@ -166,7 +235,7 @@ if (!$editing && $form['account_holder']==='') $form['account_holder']=trim($for
 .member-table-header h2{margin:0!important;padding:0;line-height:1.2;font-size:1.15rem}
 .member-table-header .member-btn{display:inline-flex;align-items:center;gap:7px;flex:0 0 auto;margin:0;padding:7px 11px;line-height:1.2;white-space:nowrap;font-size:.88rem}
 @media(max-width:460px){.member-table-header{gap:8px}.member-table-header .member-btn{padding:7px 9px;font-size:.8rem}}
-.member-card{background:#fff;border-radius:12px;padding:20px;margin:18px 0;box-shadow:0 2px 12px #0000000d}.member-table{width:100%;border-collapse:collapse}.member-table th,.member-table td{padding:11px 12px;border-bottom:1px solid #e8e8e8;text-align:left}.member-table th a{color:inherit;text-decoration:none;display:inline-flex;align-items:center;gap:7px;white-space:nowrap}.member-table th a:hover{color:#244e79}.member-sort-indicator{font-size:.75em;color:#244e79}.member-status-tag{display:inline-block;padding:3px 8px;border-radius:999px;font-size:.76rem;line-height:1.25;font-weight:700;white-space:nowrap}.member-status-tag.status-aktiv{background:#e3f4e8;color:#176b35}.member-status-tag.status-gekündigt{background:#fff1d6;color:#8a5700}.member-status-tag.status-inaktiv{background:#eceff2;color:#58636f}.member-row{cursor:pointer}.member-row:hover{background:#f5f7fa}.member-row.is-open td{background:#eef4fa;border-bottom:0;font-weight:600}.member-row.is-open td:first-child{border-left:3px solid #244e79}.member-row.is-open td:last-child{border-right:1px solid #d7e2ed}.member-details td{background:#f8fafc;padding:16px 18px;border:1px solid #d7e2ed;border-top:0;border-radius:0 0 10px 10px}.member-detail-blocks{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr));gap:12px;align-items:start}.member-detail-block{background:#fff;border:1px solid #e2e8f0;border-radius:9px;padding:13px;min-width:0}.member-detail-block h3{font-size:.95rem;margin:0 0 11px;color:#34445a}.member-detail-lines{display:flex;flex-direction:column;gap:9px}.member-detail-line{display:grid;grid-template-columns:minmax(0,1fr);gap:10px;align-items:start}.member-detail-line>div{min-width:0}.member-detail-line:not(.paired)>div{display:grid;grid-template-columns:minmax(115px,.65fr) minmax(0,1.35fr);gap:10px;align-items:baseline}.member-detail-line dt{font-size:.8rem;color:#667085}.member-detail-line dd{margin:0;overflow-wrap:break-word;word-break:normal;font-weight:500;min-width:0}.member-detail-line.paired{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.member-detail-line.paired>div{min-width:0}.member-form-sections{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),1fr));gap:14px;align-items:start}.member-form-section{background:#f7f9fc;border:1px solid #e3e9f1;border-radius:10px;padding:15px;min-width:0}.member-form-section h3{font-size:1rem;margin:0 0 13px;color:#34445a}.member-form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.member-form-grid label{display:flex;flex-direction:column;gap:5px;font-weight:600;min-width:0}.member-form-grid input,.member-form-grid textarea{width:100%;min-width:0;box-sizing:border-box;padding:9px 10px;border:1px solid #cbd0d8;border-radius:7px;font:inherit;background:#fff}.member-form-grid textarea{min-height:85px}.member-form-grid .full{grid-column:1/-1}.member-form-grid .member-number-field{max-width:115px}.member-form-grid .postal-field{max-width:none}.postal-city-row{grid-column:1/-1;display:grid;grid-template-columns:100px minmax(0,1fr);gap:12px;min-width:0}.postal-city-row label{display:flex;flex-direction:column;gap:5px;font-weight:600;min-width:0}.postal-city-row input{width:100%;min-width:0;box-sizing:border-box;padding:9px 10px;border:1px solid #cbd0d8;border-radius:7px;font:inherit;background:#fff}.member-form-grid .date-field{max-width:190px}.member-form-section.membership-section{background:#f8f8f3;border-color:#e9e7d8}.member-form-section.account-section{background:#f3f7fa;border-color:#dfe9f0}.member-form-section.personal-section{background:#f7f7fb;border-color:#e5e5ef}.member-actions{display:flex;gap:9px;margin-top:16px;flex-wrap:wrap}.member-btn{border:0;border-radius:7px;padding:10px 16px;cursor:pointer;text-decoration:none;display:inline-block;background:#e9edf2;color:#202938}.member-btn.primary{background:#244e79;color:white}.member-btn.danger{background:#a92e35;color:white}.member-alert{padding:12px 15px;border-radius:8px;margin:12px 0;background:#e8f5e9}.member-alert.error{background:#fdeaea;color:#8b1e1e}.member-muted{color:#667085;font-size:.9rem}@media(max-width:650px){.member-table th:nth-child(5),.member-table td:nth-child(5){display:none}.member-card{padding:12px}.member-table th,.member-table td{padding:9px 6px;font-size:.9rem}}
+.member-card{background:#fff;border-radius:12px;padding:20px;margin:18px 0;box-shadow:0 2px 12px #0000000d}.member-table{width:100%;border-collapse:collapse}.member-table th,.member-table td{padding:11px 12px;border-bottom:1px solid #e8e8e8;text-align:left}.member-table th a{color:inherit;text-decoration:none;display:inline-flex;align-items:center;gap:7px;white-space:nowrap}.member-table th a:hover{color:#244e79}.member-sort-indicator{font-size:.75em;color:#244e79}.member-status-tag{display:inline-block;padding:3px 8px;border-radius:999px;font-size:.76rem;line-height:1.25;font-weight:700;white-space:nowrap}.member-status-tag.status-aktiv{background:#e3f4e8;color:#176b35}.member-status-tag.status-gekündigt{background:#fff1d6;color:#8a5700}.member-status-tag.status-inaktiv{background:#eceff2;color:#58636f}.member-anniversary{display:inline-flex;align-items:center;gap:5px;padding:3px 8px;border-radius:999px;background:#fff7df;color:#9a6a00;border:1px solid #e7c66a;font-size:.78rem;line-height:1.25;font-weight:800;white-space:nowrap}.member-anniversary i{color:#c18a00}.member-row{cursor:pointer}.member-row:hover{background:#f5f7fa}.member-row.is-open td{background:#eef4fa;border-bottom:0;font-weight:600}.member-row.is-open td:first-child{border-left:3px solid #244e79}.member-row.is-open td:last-child{border-right:1px solid #d7e2ed}.member-details td{background:#f8fafc;padding:16px 18px;border:1px solid #d7e2ed;border-top:0;border-radius:0 0 10px 10px}.member-detail-blocks{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr));gap:12px;align-items:start}.member-detail-block{background:#fff;border:1px solid #e2e8f0;border-radius:9px;padding:13px;min-width:0}.member-detail-block h3{font-size:.95rem;margin:0 0 11px;color:#34445a}.member-detail-lines{display:flex;flex-direction:column;gap:9px}.member-detail-line{display:grid;grid-template-columns:minmax(0,1fr);gap:10px;align-items:start}.member-detail-line>div{min-width:0}.member-detail-line:not(.paired)>div{display:grid;grid-template-columns:minmax(115px,.65fr) minmax(0,1.35fr);gap:10px;align-items:baseline}.member-detail-line dt{font-size:.8rem;color:#667085}.member-detail-line dd{margin:0;overflow-wrap:break-word;word-break:normal;font-weight:500;min-width:0}.member-detail-line.paired{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.member-detail-line.paired>div{min-width:0}.member-form-sections{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),1fr));gap:14px;align-items:start}.member-form-section{background:#f7f9fc;border:1px solid #e3e9f1;border-radius:10px;padding:15px;min-width:0}.member-form-section h3{font-size:1rem;margin:0 0 13px;color:#34445a}.member-form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.member-form-grid label{display:flex;flex-direction:column;gap:5px;font-weight:600;min-width:0}.member-form-grid input,.member-form-grid textarea{width:100%;min-width:0;box-sizing:border-box;padding:9px 10px;border:1px solid #cbd0d8;border-radius:7px;font:inherit;background:#fff}.member-form-grid textarea{min-height:85px}.member-form-grid .full{grid-column:1/-1}.member-form-grid .member-number-field{max-width:115px}.member-form-grid .postal-field{max-width:none}.postal-city-row{grid-column:1/-1;display:grid;grid-template-columns:100px minmax(0,1fr);gap:12px;min-width:0}.postal-city-row label{display:flex;flex-direction:column;gap:5px;font-weight:600;min-width:0}.postal-city-row input{width:100%;min-width:0;box-sizing:border-box;padding:9px 10px;border:1px solid #cbd0d8;border-radius:7px;font:inherit;background:#fff}.member-form-grid .date-field{max-width:190px}.member-form-section.membership-section{background:#f8f8f3;border-color:#e9e7d8}.member-form-section.account-section{background:#f3f7fa;border-color:#dfe9f0}.member-form-section.personal-section{background:#f7f7fb;border-color:#e5e5ef}.member-actions{display:flex;gap:9px;margin-top:16px;flex-wrap:wrap}.member-btn{border:0;border-radius:7px;padding:10px 16px;cursor:pointer;text-decoration:none;display:inline-block;background:#e9edf2;color:#202938}.member-btn.primary{background:#244e79;color:white}.member-btn.danger{background:#a92e35;color:white}.member-alert{padding:12px 15px;border-radius:8px;margin:12px 0;background:#e8f5e9}.member-alert.error{background:#fdeaea;color:#8b1e1e}.member-muted{color:#667085;font-size:.9rem}@media(max-width:650px){.member-table th:nth-child(5),.member-table td:nth-child(5){display:none}.member-card{padding:12px}.member-table th,.member-table td{padding:9px 6px;font-size:.9rem}}
 
 .member-stats-widget{display:block;margin:0 0 22px;padding:22px 24px;background:#fff;border:1px solid #e4e9ed;border-radius:14px;box-shadow:0 3px 14px rgba(28,45,60,.06)}
 .member-stats-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
@@ -178,6 +247,8 @@ if (!$editing && $form['account_holder']==='') $form['account_holder']=trim($for
 @media(max-width:460px){.member-stats-grid{grid-template-columns:minmax(0,1fr)}}
 </style></head><body><div class="container"><header class="app-page-header"><h1>Mitgliederübersicht</h1><?php require $appRoot.'/includes/navigation.php'; ?></header><main class="member-wrap">
 <?php if($notice):?><div class="member-alert"><?=mh($notice)?></div><?php endif;?><?php if($error):?><div class="member-alert error"><?=mh($error)?></div><?php endif;?>
+<?php $pendingNewMemberIds = array_values(array_unique(array_filter(array_map('intval', (array)($_SESSION['new_member_communication_ids'] ?? [])), fn($v)=>$v>0))); ?>
+<?php if($pendingNewMemberIds):?><div class="member-alert" style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap"><span><strong><?=count($pendingNewMemberIds)?> neu angelegte Mitglied<?=count($pendingNewMemberIds)===1?'':'er'?></strong> können jetzt gemeinsam begrüßt werden. Du kannst vorher weitere Mitglieder anlegen.</span><span class="member-actions" style="margin:0"><a class="member-btn" href="mitglieder.php?neu=1">Weiteres Mitglied anlegen</a><a class="member-btn primary" href="mitglieder_kommunikation.php?neue_mitglieder=1">Begrüßungsmail vorbereiten</a></span></div><?php endif;?>
 <section class="member-stats-widget" aria-label="Mitglieder-Kennzahlen">
 
 <div class="member-stats-grid">
@@ -202,9 +273,9 @@ if (!$editing && $form['account_holder']==='') $form['account_holder']=trim($for
 <label>Kontoinhaber<input name="account_holder" id="account_holder" type="text" required value="<?=mh($form['account_holder']??'')?>"></label>
 <label>Kreditinstitut<input name="bank_name" type="text" required value="<?=mh($form['bank_name']??'')?>"></label>
 <label class="full">IBAN<input name="iban" id="iban" type="text" inputmode="text" autocomplete="off" required maxlength="27" placeholder="DE## #### #### #### #### ##" value="<?=mh($form['iban']??'')?>"></label>
-<label class="full">BIC<input name="bic" type="text" required value="<?=mh($form['bic']??'')?>"></label>
+<label class="full">BIC<input name="bic" type="text" list="member-bic-suggestions" autocomplete="off" required value="<?=mh($form['bic']??'')?>"><datalist id="member-bic-suggestions"><?php foreach(array_keys($bicSuggestions??[]) as $bicSuggestion):?><option value="<?=mh($bicSuggestion)?>"><?php endforeach;?></datalist></label>
 <label class="full date-field">Unterschrieben am<input name="start_date" id="start_date" type="date" required value="<?=mh($form['start_date']??'')?>"></label>
-<label class="full">Mandatsreferenz<input name="mandate_reference" type="text" value="<?=mh($form['mandate_reference']??'')?>"></label>
+<label class="full">Mandatsreferenz<input name="mandate_reference" type="text" value="<?=mh($form['mandate_reference']??'')?>" <?=!$editing?'readonly':''?>></label>
 </div></section>
 <section class="member-form-section membership-section"><h3>Mitgliedschaftsangaben</h3><div class="member-form-grid">
 <label>Beitrag (€)<input name="monthly_fee" type="number" min="0.01" step="0.01" required value="<?=mh($form['monthly_fee']??'')?>"></label>
@@ -219,7 +290,7 @@ foreach ($sortLabels as $key=>$label):
     $nextDirection = ($sort === $key && $direction === 'asc') ? 'desc' : 'asc';
     $query = http_build_query(['sort'=>$key,'dir'=>$nextDirection] + ($openId ? ['open'=>$openId] : []));
     $indicator = $sort === $key ? ($direction === 'asc' ? '↑' : '↓') : '↕';
-?><th><a href="?<?=mh($query)?>"><?=mh($label)?><span class="member-sort-indicator" aria-hidden="true"><?=$indicator?></span></a></th><?php if ($key === 'member_number'): ?><th>Status</th><?php endif; ?><?php endforeach;?></tr></thead><tbody><?php foreach($rows as $r):?><tr class="member-row<?=$r['id']===$openId?' is-open':''?>" onclick="openMemberRow(<?=$r['id']===$openId?0:(int)$r['id']?>)"><td><?=mh($r['member_number'])?></td><td><span class="member-status-tag status-<?=strtolower(mh($r['status'] ?? 'Aktiv'))?>"><?=mh($r['status'] ?? 'Aktiv')?></span></td><td><?=mh($r['last_name'])?></td><td><?=mh($r['first_name'])?></td><td><?=date('d.m.Y',strtotime($r['start_date']))?></td><td><?=$r['end_date']?date('d.m.Y',strtotime($r['end_date'])):'–'?></td></tr><?php if((int)$r['id']===$openId):?><tr class="member-details"><td colspan="6"><div class="member-detail-blocks">
+?><th><a href="?<?=mh($query)?>"><?=mh($label)?><span class="member-sort-indicator" aria-hidden="true"><?=$indicator?></span></a></th><?php if ($key === 'member_number'): ?><th>Status</th><?php endif; ?><?php endforeach;?></tr></thead><tbody><?php foreach($rows as $r):?><tr class="member-row<?=$r['id']===$openId?' is-open':''?>" onclick="openMemberRow(<?=$r['id']===$openId?0:(int)$r['id']?>)"><td><?=mh($r['member_number'])?></td><td><?php if(!empty($r['anniversary_years'])):?><span class="member-anniversary" title="Jubiläum am <?=date('d.m.Y',strtotime($r['anniversary_date']))?>"><i class="fa-solid fa-crown" aria-hidden="true"></i><?= (int)$r['anniversary_years'] ?> Jahre</span><?php else:?><span class="member-status-tag status-<?=strtolower(mh($r['status'] ?? 'Aktiv'))?>"><?=mh($r['status'] ?? 'Aktiv')?></span><?php endif;?></td><td><?=mh($r['last_name'])?></td><td><?=mh($r['first_name'])?></td><td><?=date('d.m.Y',strtotime($r['start_date']))?></td><td><?=$r['end_date']?date('d.m.Y',strtotime($r['end_date'])):'–'?></td></tr><?php if((int)$r['id']===$openId):?><tr class="member-details"><td colspan="6"><div class="member-detail-blocks">
 <section class="member-detail-block"><h3>Stammdaten</h3><dl class="member-detail-lines">
 <div class="member-detail-line"><div><dt>Straße, Hausnummer</dt><dd><?=($r['street']??'')!==''?mh($r['street']):'–'?></dd></div></div>
 <div class="member-detail-line paired"><div><dt>PLZ</dt><dd><?=($r['postal_code']??'')!==''?mh($r['postal_code']):'–'?></dd></div><div><dt>Ort</dt><dd><?=($r['city']??'')!==''?mh($r['city']):'–'?></dd></div></div>

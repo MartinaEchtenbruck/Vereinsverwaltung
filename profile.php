@@ -31,6 +31,10 @@ $pushTypes = [
         'label' => 'Kontaktvorschläge',
         'description' => 'Hinweise zu neuen Kontaktvorschlägen, die geprüft werden sollen.',
     ],
+    'member_anniversary' => [
+        'label' => 'Mitgliedsjubiläen',
+        'description' => 'Erinnerungen sechs und zwei Monate vor einem Mitgliedsjubiläum.',
+    ],
     'user_registered' => [
         'label' => 'Neue Benutzerregistrierungen',
         'description' => 'Push-Hinweis, wenn ein neuer Benutzer einen Registrierungsantrag einreicht.',

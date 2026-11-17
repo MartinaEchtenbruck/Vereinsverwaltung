@@ -27,7 +27,6 @@ $fundraisingStats = [
 $fundraisingLoadError = false;
 $dashboardTasks = [];
 $dashboardGroups = ['overdue'=>[], 'this_week'=>[], 'next_week'=>[], 'demnaechst'=>[]];
-$dashboardCsrf = '';
 if ($showFundraisingWidget) {
     try {
         require_once $appRoot . '/db_connection.php';
@@ -77,73 +76,42 @@ if ($showProjectTasks) {
         $database = new Database();
         $dashboardDb = $database->getConnection();
         $dashboardDb->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-        if (empty($_SESSION['pm_csrf'])) $_SESSION['pm_csrf'] = bin2hex(random_bytes(32));
-        $dashboardCsrf = $_SESSION['pm_csrf'];
-
-        // Alle offenen Aufgaben stammen aus der gemeinsamen tasks-Tabelle.
-        $query = $dashboardDb->query("SELECT t.id, t.title, t.start_date, t.due_date, t.status, t.assigned_user_id,
-                p.title AS project_title, COALESCE(p.color, '#DCEAF0') AS project_color,
-                u.full_name AS assignee, (t.project_id IS NULL) AS is_standalone
+        // Für den schnellen Überblick werden nur Titel und Fälligkeit benötigt.
+        // Aufgaben ohne Fälligkeitsdatum sowie Aufgaben ab nächster Woche bleiben außen vor.
+        $query = $dashboardDb->query("SELECT t.id, t.title, t.start_date, t.due_date
             FROM tasks t
             LEFT JOIN projects p ON p.id=t.project_id
-            LEFT JOIN users u ON u.id=t.assigned_user_id
             WHERE t.status<>'done' AND (t.project_id IS NULL OR p.status='active')
+                AND t.due_date IS NOT NULL
             ORDER BY t.due_date, t.id");
         $dashboardTasks = $query->fetchAll(PDO::FETCH_ASSOC);
 
-        // Kommentare aller Aufgaben werden über dieselbe task_id geladen.
-        $taskIds = array_map('intval', array_column($dashboardTasks, 'id'));
-        $latestComments = [];
-        if ($taskIds) {
-            try {
-                $placeholders = implode(',', array_fill(0, count($taskIds), '?'));
-                $commentStmt = $dashboardDb->prepare("SELECT c.task_id AS parent_id, c.comment, u.full_name AS author
-                    FROM task_comments c LEFT JOIN users u ON u.id=c.user_id
-                    WHERE c.task_id IN ($placeholders) ORDER BY c.created_at ASC, c.id ASC");
-                $commentStmt->execute($taskIds);
-                while ($comment = $commentStmt->fetch(PDO::FETCH_ASSOC)) {
-                    $latestComments['task-' . (int)$comment['parent_id']] = [
-                        'comment' => (string)$comment['comment'],
-                        'author' => (string)($comment['author'] ?? '')
-                    ];
-                }
-            } catch (Throwable $e) {
-                error_log('Dashboard-Aufgabenkommentare: ' . $e->getMessage());
-            }
-        }
-        foreach ($dashboardTasks as &$task) {
-            $commentKey = 'task-' . (int)$task['id'];
-            $task['last_comment'] = $latestComments[$commentKey]['comment'] ?? '';
-            $task['last_comment_author'] = $latestComments[$commentKey]['author'] ?? '';
-        }
-        unset($task);
-
+        // Dieselbe Gruppierungslogik wie in der Projektmanagement-Aufgabenübersicht:
+        // Überfälligkeit richtet sich nach dem Fälligkeitsdatum und hat Vorrang.
+        // Bei noch nicht überfälligen Aufgaben entscheidet der Arbeitsbeginn,
+        // damit länger laufende Aufgaben bereits in der Woche ihres Arbeitsbeginns erscheinen.
         $today = new DateTimeImmutable('today');
         $monday = new DateTimeImmutable('monday this week');
         $nextMonday = $monday->modify('+1 week');
         $afterNextMonday = $monday->modify('+2 weeks');
         $fourWeeks = $monday->modify('+4 weeks');
         foreach ($dashboardTasks as $task) {
-            // Ohne Fälligkeit bleibt die Aufgabe außerhalb der Übersicht.
-            if (!$task['due_date']) continue;
+            if (empty($task['due_date'])) continue;
             $due = new DateTimeImmutable($task['due_date']);
 
-            // Eine abgelaufene Frist hat immer Vorrang vor dem Startdatum.
             if ($due < $today) {
-                $group = 'overdue';
-            } else {
-                // Primär nach Arbeitsbeginn gruppieren.
-                $start = !empty($task['start_date'])
-                    ? new DateTimeImmutable($task['start_date'])
-                    : $due;
-                if ($start < $today) $start = $today;
-
-                if ($start < $nextMonday) $group = 'this_week';
-                elseif ($start < $afterNextMonday) $group = 'next_week';
-                elseif ($start < $fourWeeks) $group = 'demnaechst';
-                else continue;
+                $dashboardGroups['overdue'][] = $task;
+                continue;
             }
-            $dashboardGroups[$group][] = $task;
+
+            $start = !empty($task['start_date'])
+                ? new DateTimeImmutable($task['start_date'])
+                : $due;
+            if ($start < $today) $start = $today;
+
+            if ($start < $nextMonday) {
+                $dashboardGroups['this_week'][] = $task;
+            }
         }
     } catch (Throwable $e) {
         error_log('Dashboard-Aufgabenwidget: ' . $e->getMessage());
@@ -153,10 +121,6 @@ if ($showProjectTasks) {
     }
 }
 function dashboardEscape($value): string { return htmlspecialchars((string)$value, ENT_QUOTES, 'UTF-8'); }
-function dashboardColor($value): string {
-    $value = strtoupper(trim((string)$value));
-    return preg_match('/^#[0-9A-F]{6}$/', $value) ? $value : '#DCEAF0';
-}
 $fundraisingProgress = $fundraisingStats['total'] > 0
     ? min(100, (int)round($fundraisingStats['contacted'] / $fundraisingStats['total'] * 100))
     : 0;
@@ -172,42 +136,59 @@ $fundraisingProgress = $fundraisingStats['total'] > 0
     <link rel="stylesheet" href="includes/navigation.css">
     <?php if ($showProjectTasks): ?><link rel="stylesheet" href="project-management.css"><?php endif; ?>
     <style>
-        .dashboard-content { min-height: 180px; }
-        .dashboard-project-tasks { margin-top: 24px; }
-        .fundraising-widget { display:block; margin:24px 0 28px; padding:22px 24px; color:inherit; background:#fff; border:1px solid #e4e9ed; border-radius:14px; box-shadow:0 3px 14px rgba(28,45,60,.06); }
-        .fundraising-open-card { display:block; color:inherit; text-decoration:none; transition:background .18s ease, border-color .18s ease, box-shadow .18s ease; }
-        .fundraising-open-card:hover, .fundraising-open-card:focus-visible { background:#eef4f7; border-color:#b8cbd5; box-shadow:0 3px 10px rgba(28,45,60,.08); outline:2px solid transparent; }
-        .fundraising-open-card:focus-visible { outline:2px solid #496779; outline-offset:2px; }
-        .fundraising-widget-head { display:flex; justify-content:space-between; align-items:flex-start; gap:16px; margin-bottom:20px; }
-        .fundraising-widget-title { margin:0; color:#233746; font-size:1.5rem; line-height:1.2; font-weight:700; }
-        .fundraising-widget-subtitle { margin:6px 0 0; color:#6b7882; font-size:.9rem; }
-        .fundraising-widget-link { flex-shrink:0; color:#496779; font-size:.9rem; font-weight:600; }
-        .fundraising-widget-section-title { margin:0 0 12px; color:#51616c; font-size:.8rem; font-weight:700; letter-spacing:.06em; text-transform:uppercase; }
-        .fundraising-open-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px; }
-        .fundraising-open-card { min-width:0; padding:15px 16px; border:1px solid #e7ecef; border-radius:10px; background:#f8fafb; }
-        .fundraising-open-card .number { display:block; margin-bottom:5px; color:#263e4d; font-size:1.9rem; line-height:1.15; font-weight:750; }
-        .fundraising-open-card .label { color:#4c5d68; font-size:.9rem; }
-        .fundraising-results { display:grid; grid-template-columns:minmax(0,1fr); gap:10px; margin-top:22px; }
-        .fundraising-result { padding:11px 13px; border-radius:9px; background:#f7f9fa; }
-        .fundraising-result .number { display:block; font-size:1.45rem; line-height:1.2; font-weight:750; }
-        .fundraising-result .label { display:block; margin-top:4px; color:#64727b; font-size:.8rem; }
-        .fundraising-result.positive { background:#eef7f0; border:1px solid #91c4a0; } .fundraising-result.positive .number { color:#287447; }
-        .fundraising-result.negative { background:#fbf0ef; border:1px solid #d99a94; } .fundraising-result.negative .number { color:#a94c45; }
-        .fundraising-result.waiting { background:#f1f4f6; border:1px solid #aabcc7; } .fundraising-result.waiting .number { color:#5c6c77; }
-        .fundraising-result.total { display:grid; grid-template-columns:minmax(180px, .65fr) minmax(0, 2fr); align-items:stretch; gap:14px; padding:15px 16px; border:1px solid #e7ecef; border-radius:10px; background:#f8fafb; }
-        .fundraising-total-summary { display:flex; flex-direction:column; justify-content:center; padding:0 12px 0 0; }
-        .fundraising-result.total .number { color:#263e4d; font-size:1.9rem; }
-        .fundraising-result.total .label { margin-top:0; color:#4c5d68; font-size:.9rem; font-weight:700; }
-        .fundraising-result-breakdown { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; min-width:0; }
-        .fundraising-result-link { display:block; color:inherit; text-decoration:none; transition:background .18s ease, border-color .18s ease, box-shadow .18s ease; }
-        .fundraising-result-link:hover, .fundraising-result-link:focus-visible { background:#fff; border-color:#496779; box-shadow:0 2px 8px rgba(28,45,60,.1); outline:2px solid #496779; outline-offset:2px; }
-        .fundraising-progress { margin-top:18px; }
-        .fundraising-progress-label { display:flex; justify-content:space-between; gap:12px; margin-bottom:8px; color:#5c6b75; font-size:.85rem; }
-        .fundraising-progress-track { height:8px; overflow:hidden; border-radius:99px; background:#edf0f2; }
+        .dashboard-content { min-height: 120px; }
+        .dashboard-project-tasks { margin-top: 14px; }
+        .dashboard-project-tasks.pm-section { padding: 14px 16px; margin-bottom: 14px; }
+        .dashboard-project-tasks .pm-section-heading { align-items:center; margin-bottom:10px; }
+        .dashboard-project-tasks .pm-section-heading h2 { margin:0; font-size:1.12rem; }
+        .dashboard-project-tasks .pm-week-grid { grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
+        .dashboard-project-tasks .pm-week-column { border-top-width:3px; }
+        .dashboard-project-tasks .pm-week-column h3 { padding:7px 10px; font-size:.82rem; }
+        .dashboard-project-tasks .pm-week-column h3 span { min-width:20px; text-align:center; padding:0 6px; font-size:.76rem; }
+        .dashboard-project-tasks .pm-task-row { padding:0; border-top:1px solid #edf0f2; }
+        .dashboard-project-tasks .pm-task-tile { margin:0; padding:7px 10px; border:0; border-radius:0; background:transparent; box-shadow:none; cursor:pointer; }
+        .dashboard-project-tasks .pm-task-tile:hover { background:#f5f8f9; box-shadow:none; }
+        .dashboard-project-tasks .pm-task-title { display:block; overflow-wrap:anywhere; font-size:.86rem; line-height:1.3; font-weight:600; }
+        .dashboard-project-tasks .pm-empty { margin:0; padding:8px 10px; font-size:.78rem; }
+        .fundraising-widget { display:block; margin:14px 0 18px; padding:15px 16px; color:inherit; background:#fff; border:1px solid #e4e9ed; border-radius:12px; box-shadow:0 2px 9px rgba(28,45,60,.045); }
+        .fundraising-widget-head { display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom:12px; }
+        .fundraising-widget-title { margin:0; color:#233746; font-size:1.12rem; line-height:1.25; font-weight:700; }
+        .fundraising-widget-subtitle { margin:3px 0 0; color:#6b7882; font-size:.78rem; }
+        .fundraising-widget-section-title { margin:0 0 7px; color:#64727b; font-size:.68rem; font-weight:700; letter-spacing:.05em; text-transform:uppercase; }
+        .fundraising-open-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:7px; }
+        .fundraising-open-card { display:flex; align-items:center; gap:9px; min-width:0; padding:8px 10px; border:1px solid #e7ecef; border-radius:8px; background:#f8fafb; color:inherit; text-decoration:none; transition:background .15s,border-color .15s; }
+        .fundraising-open-card:hover,.fundraising-open-card:focus-visible { background:#eef4f7; border-color:#b8cbd5; outline:2px solid transparent; }
+        .fundraising-open-card .number { flex:0 0 auto; color:#263e4d; font-size:1.35rem; line-height:1; font-weight:750; }
+        .fundraising-open-card .label { min-width:0; color:#4c5d68; font-size:.73rem; line-height:1.2; }
+        .fundraising-open-card .label i,.fundraising-result-link .label i { font-size:.62rem; opacity:.65; }
+        .fundraising-bottom { display:grid; grid-template-columns:minmax(180px,.9fr) minmax(0,1.5fr); gap:16px; align-items:center; margin-top:12px; }
+        .fundraising-progress { min-width:0; }
+        .fundraising-progress-label { display:flex; justify-content:space-between; gap:8px; margin-bottom:5px; color:#5c6b75; font-size:.72rem; }
+        .fundraising-progress-track { height:6px; overflow:hidden; border-radius:99px; background:#edf0f2; }
         .fundraising-progress-fill { height:100%; border-radius:99px; background:#5b8b75; }
-        .fundraising-widget-error { margin:0; color:#8d4c35; font-size:.9rem; }
-        @media (max-width:680px) { .fundraising-widget { padding:18px; } .fundraising-widget-head { flex-direction:column; } .fundraising-open-grid { grid-template-columns:repeat(2,minmax(0,1fr)); } .fundraising-result.total { grid-template-columns:minmax(0,1fr); } .fundraising-result-breakdown { grid-template-columns:repeat(3,minmax(0,1fr)); } .fundraising-result-breakdown .fundraising-result { padding:10px 8px; } }
-        @media (max-width:460px) { .fundraising-result-breakdown { grid-template-columns:minmax(0,1fr); } }
+        .fundraising-results { display:grid; grid-template-columns:auto repeat(3,minmax(0,1fr)); gap:6px; align-items:stretch; }
+        .fundraising-result { min-width:0; padding:6px 8px; border-radius:7px; background:#f7f9fa; }
+        .fundraising-result .number { display:block; font-size:1.15rem; line-height:1.1; font-weight:750; }
+        .fundraising-result .label { display:block; margin-top:2px; color:#64727b; font-size:.68rem; line-height:1.2; }
+        .fundraising-result.positive { background:#eef7f0; border:1px solid #c8e1cf; } .fundraising-result.positive .number { color:#287447; }
+        .fundraising-result.negative { background:#fbf0ef; border:1px solid #ecd0cd; } .fundraising-result.negative .number { color:#a94c45; }
+        .fundraising-result.waiting { background:#f1f4f6; border:1px solid #d4dfe4; } .fundraising-result.waiting .number { color:#5c6c77; }
+        .fundraising-result.total { padding:6px 9px; border:1px solid #e7ecef; background:#f8fafb; }
+        .fundraising-result.total .number { color:#263e4d; font-size:1.2rem; }
+        .fundraising-result.total .label { color:#4c5d68; font-weight:700; }
+        .fundraising-result-link { display:block; color:inherit; text-decoration:none; transition:background .15s,border-color .15s; }
+        .fundraising-result-link:hover,.fundraising-result-link:focus-visible { background:#fff; border-color:#496779; outline:2px solid #496779; outline-offset:1px; }
+        .fundraising-widget-error { margin:0; color:#8d4c35; font-size:.82rem; }
+        @media (max-width:760px) {
+            .dashboard-project-tasks .pm-week-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+            .fundraising-open-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+            .fundraising-bottom { grid-template-columns:minmax(0,1fr); gap:10px; }
+        }
+        @media (max-width:460px) {
+            .dashboard-project-tasks .pm-week-grid { grid-template-columns:minmax(0,1fr); }
+            .fundraising-results { grid-template-columns:repeat(2,minmax(0,1fr)); }
+        }
+
     </style>
 
     <link rel="icon" type="image/png" sizes="32x32" href="/intern/assets/icons/favicon.png">
@@ -228,29 +209,15 @@ $fundraisingProgress = $fundraisingStats['total'] > 0
             <?php if ($showProjectTasks): ?>
                 <?php if (isset($_GET['saved'])): ?><div class="pm-alert pm-success">Aufgabenstatus wurde aktualisiert.</div><?php endif; ?>
                 <section class="pm-section dashboard-project-tasks">
-                    <div class="pm-section-heading"><div><h2>Aufgaben nach Fälligkeit</h2></div><a class="pm-button small secondary" href="projects.php">Alle Aufgaben</a></div>
+                    <div class="pm-section-heading"><div><h2>Dringende Aufgaben</h2></div><a class="pm-button small secondary" href="projects.php">Alle Aufgaben</a></div>
                     <div class="pm-week-grid">
-                        <?php $dashboardLabels = ['overdue'=>'Überfällig','this_week'=>'Diese Woche','next_week'=>'Nächste Woche','demnaechst'=>'Demnächst']; foreach ($dashboardLabels as $groupKey => $groupLabel): ?>
+                        <?php $dashboardLabels = ['overdue'=>'Überfällig','this_week'=>'Diese Woche']; foreach ($dashboardLabels as $groupKey => $groupLabel): ?>
                             <section class="pm-week-column pm-<?= dashboardEscape($groupKey) ?>">
                                 <h3><?= dashboardEscape($groupLabel) ?><span><?= count($dashboardGroups[$groupKey]) ?></span></h3>
                                 <?php if (!$dashboardGroups[$groupKey]): ?><p class="pm-empty">Keine Aufgaben</p>
-                                <?php else: foreach ($dashboardGroups[$groupKey] as $task): $taskColor = dashboardColor($task['project_color'] ?? null); ?>
-                                    <?php $isStandalone = !empty($task['is_standalone']); $taskUrl = 'projects.php?view=task&amp;id=' . (int)$task['id']; $statusAction = 'set_task_status'; $idField = 'task_id'; ?>
-                                    <article class="pm-task-row pm-task-tile" style="--project-color:<?= dashboardEscape($taskColor) ?>" data-task-url="<?= $taskUrl ?>" tabindex="0" role="link" aria-label="Aufgabe öffnen: <?= dashboardEscape($task['title']) ?>">
+                                <?php else: foreach ($dashboardGroups[$groupKey] as $task): $taskUrl = 'projects.php?view=task&amp;id=' . (int)$task['id']; ?>
+                                    <article class="pm-task-row pm-task-tile" data-task-url="<?= $taskUrl ?>" tabindex="0" role="link" aria-label="Aufgabe öffnen: <?= dashboardEscape($task['title']) ?>">
                                         <a class="pm-task-title" href="<?= $taskUrl ?>"><?= dashboardEscape($task['title']) ?></a>
-                                        <div class="pm-task-project"><?= $isStandalone ? 'Projektunabhängige Aufgabe' : dashboardEscape($task['project_title']) ?></div>
-                                        <?php if (!empty($task['last_comment'])): $lastComment = (string)$task['last_comment']; $commentChars = preg_split('//u', $lastComment, -1, PREG_SPLIT_NO_EMPTY); if ($commentChars !== false && count($commentChars) > 140) $lastComment = implode('', array_slice($commentChars, 0, 140)) . '[...]'; ?>
-                                            <div class="pm-task-last-comment"><?= dashboardEscape($lastComment) ?><?php if (!empty($task['last_comment_author'])): ?><small> · <?= dashboardEscape($task['last_comment_author']) ?></small><?php endif; ?></div>
-                                        <?php endif; ?>
-                                        <?php if (!empty($task['assignee'])): ?><div class="pm-task-meta"><span class="pm-assignee">Übernommen: <?= dashboardEscape($task['assignee']) ?></span></div><?php endif; ?>
-                                        <div class="pm-task-status-actions" aria-label="Aufgabenstatus ändern">
-                                            <?php if ($task['status'] !== 'in_progress'): ?>
-                                                <form method="post" action="projects.php"><input type="hidden" name="csrf_token" value="<?= dashboardEscape($dashboardCsrf) ?>"><input type="hidden" name="action" value="<?= $statusAction ?>"><input type="hidden" name="<?= $idField ?>" value="<?= (int)$task['id'] ?>"><input type="hidden" name="status" value="in_progress"><input type="hidden" name="return_to" value="dashboard"><button class="pm-icon-button pm-icon-progress" type="submit" title="Als in Bearbeitung markieren" aria-label="Als in Bearbeitung markieren"><i class="fa-solid fa-play"></i></button></form>
-                                            <?php else: ?>
-                                                <form method="post" action="projects.php"><input type="hidden" name="csrf_token" value="<?= dashboardEscape($dashboardCsrf) ?>"><input type="hidden" name="action" value="<?= $statusAction ?>"><input type="hidden" name="<?= $idField ?>" value="<?= (int)$task['id'] ?>"><input type="hidden" name="status" value="open"><input type="hidden" name="return_to" value="dashboard"><button class="pm-icon-button pm-icon-open" type="submit" title="Wieder auf offen setzen" aria-label="Wieder auf offen setzen"><i class="fa-solid fa-rotate-left"></i></button></form>
-                                            <?php endif; ?>
-                                            <form method="post" action="projects.php"><input type="hidden" name="csrf_token" value="<?= dashboardEscape($dashboardCsrf) ?>"><input type="hidden" name="action" value="<?= $statusAction ?>"><input type="hidden" name="<?= $idField ?>" value="<?= (int)$task['id'] ?>"><input type="hidden" name="status" value="done"><input type="hidden" name="return_to" value="dashboard"><button class="pm-icon-button pm-icon-done" type="submit" title="Als erledigt markieren" aria-label="Als erledigt markieren"><i class="fa-regular fa-square-check"></i></button></form>
-                                        </div>
                                     </article>
                                 <?php endforeach; endif; ?>
                             </section>
@@ -276,30 +243,27 @@ $fundraisingProgress = $fundraisingStats['total'] > 0
                     <?php elseif (!$activeFundraising): ?>
                         <p class="fundraising-widget-error" style="color:#65747d">Eine neue Spendenaktion kann im Bereich „Spendenaktion verwalten“ gestartet werden.</p>
                     <?php else: ?>
-                        <h3 class="fundraising-widget-section-title">Was ist noch zu tun?</h3>
+                        <h3 class="fundraising-widget-section-title">Noch zu tun</h3>
                         <div class="fundraising-open-grid">
-                            <a class="fundraising-open-card" href="index.php?contact_type=Pers%C3%B6nlich&amp;contact_status=pending&amp;exclude_suggestions=1" aria-label="Lokale Kontakte mit ausstehender Anfrage anzeigen"><span class="number"><?= $fundraisingStats['open']['Persönlich'] ?></span><span class="label">Lokale Kontakte ansprechen <i class="fa-solid fa-arrow-up-right-from-square" aria-hidden="true"></i></span></a>
+                            <a class="fundraising-open-card" href="index.php?contact_type=Pers%C3%B6nlich&amp;contact_status=pending&amp;exclude_suggestions=1" aria-label="Lokale Kontakte mit ausstehender Anfrage anzeigen"><span class="number"><?= $fundraisingStats['open']['Persönlich'] ?></span><span class="label">Lokal ansprechen <i class="fa-solid fa-arrow-up-right-from-square" aria-hidden="true"></i></span></a>
                             <a class="fundraising-open-card" href="index.php?contact_type=Formular&amp;contact_status=pending&amp;exclude_suggestions=1" aria-label="Formularkontakte mit ausstehender Anfrage anzeigen"><span class="number"><?= $fundraisingStats['open']['Formular'] ?></span><span class="label">Formulare ausfüllen <i class="fa-solid fa-arrow-up-right-from-square" aria-hidden="true"></i></span></a>
                             <a class="fundraising-open-card" href="index.php?contact_type=Mail&amp;contact_status=pending&amp;exclude_suggestions=1" aria-label="Mail-Kontakte mit ausstehender Anfrage anzeigen"><span class="number"><?= $fundraisingStats['open']['Mail'] ?></span><span class="label">E-Mails schreiben <i class="fa-solid fa-arrow-up-right-from-square" aria-hidden="true"></i></span></a>
-                            <a class="fundraising-open-card" href="index.php?contact_status=action_needed&amp;exclude_suggestions=1" aria-label="Alle Kontakte mit Handlungsbedarf anzeigen"><span class="number"><?= $fundraisingStats['action_needed_status'] ?></span><span class="label">Kontakte mit Handlungsbedarf <i class="fa-solid fa-arrow-up-right-from-square" aria-hidden="true"></i></span></a>
+                            <a class="fundraising-open-card" href="index.php?contact_status=action_needed&amp;exclude_suggestions=1" aria-label="Alle Kontakte mit Handlungsbedarf anzeigen"><span class="number"><?= $fundraisingStats['action_needed_status'] ?></span><span class="label">Handlungsbedarf <i class="fa-solid fa-arrow-up-right-from-square" aria-hidden="true"></i></span></a>
                         </div>
-                        <div class="fundraising-progress">
-                            <div class="fundraising-progress-label"><span>Kontaktaufnahme</span><strong><?= $fundraisingStats['contacted'] ?> von <?= $fundraisingStats['total'] ?> Adressen</strong></div>
-                            <div class="fundraising-progress-track" role="progressbar" aria-label="Anteil kontaktierter Adressen" aria-valuemin="0" aria-valuemax="100" aria-valuenow="<?= $fundraisingProgress ?>"><div class="fundraising-progress-fill" style="width:<?= $fundraisingProgress ?>%"></div></div>
-                        </div>
-                        <h3 class="fundraising-widget-section-title" style="margin-top:22px">Ergebnis der bisherigen Ansprache</h3>
-                        <div class="fundraising-results">
-                            <section class="fundraising-result total" aria-label="Angefragte Kontakte insgesamt">
-                                <div class="fundraising-total-summary">
-                                    <span class="label">Angefragte Kontakte:</span>
-                                    <span class="number"><?= $fundraisingStats['results']['Spende zugesagt'] + $fundraisingStats['results']['Spende abgesagt'] + $fundraisingStats['results']['Antwort abwarten'] ?></span>
-                                </div>
-                                <div class="fundraising-result-breakdown">
+                        <div class="fundraising-bottom">
+                            <div class="fundraising-progress">
+                                <div class="fundraising-progress-label"><span>Kontaktaufnahme</span><strong><?= $fundraisingStats['contacted'] ?>/<?= $fundraisingStats['total'] ?></strong></div>
+                                <div class="fundraising-progress-track" role="progressbar" aria-label="Anteil kontaktierter Adressen" aria-valuemin="0" aria-valuemax="100" aria-valuenow="<?= $fundraisingProgress ?>"><div class="fundraising-progress-fill" style="width:<?= $fundraisingProgress ?>%"></div></div>
+                            </div>
+                            <div>
+                                <h3 class="fundraising-widget-section-title">Bisherige Rückmeldungen</h3>
+                                <div class="fundraising-results">
+                                    <div class="fundraising-result total"><span class="number"><?= $fundraisingStats['results']['Spende zugesagt'] + $fundraisingStats['results']['Spende abgesagt'] + $fundraisingStats['results']['Antwort abwarten'] ?></span><span class="label">Angefragt</span></div>
                                     <a class="fundraising-result positive fundraising-result-link" href="index.php?contact_status=promised&amp;exclude_suggestions=1" aria-label="Alle Kontakte mit Spende zugesagt anzeigen"><span class="number"><?= $fundraisingStats['results']['Spende zugesagt'] ?></span><span class="label">Zugesagt <i class="fa-solid fa-arrow-up-right-from-square" aria-hidden="true"></i></span></a>
                                     <a class="fundraising-result negative fundraising-result-link" href="index.php?contact_status=declined&amp;exclude_suggestions=1" aria-label="Alle Kontakte mit Spende abgesagt anzeigen"><span class="number"><?= $fundraisingStats['results']['Spende abgesagt'] ?></span><span class="label">Abgesagt <i class="fa-solid fa-arrow-up-right-from-square" aria-hidden="true"></i></span></a>
                                     <a class="fundraising-result waiting fundraising-result-link" href="index.php?contact_status=waiting&amp;exclude_suggestions=1" aria-label="Alle Kontakte mit Antwort ausstehend anzeigen"><span class="number"><?= $fundraisingStats['results']['Antwort abwarten'] ?></span><span class="label">Antwort ausstehend <i class="fa-solid fa-arrow-up-right-from-square" aria-hidden="true"></i></span></a>
                                 </div>
-                            </section>
+                            </div>
                         </div>
                     <?php endif; ?>
                 </section>
