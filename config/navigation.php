@@ -49,7 +49,7 @@ return [
         'permission' => 'ProjectManagement',
     ],
     [
-        'label' => 'Projektunabhängige Aufgaben',
+        'label' => 'Einzelaufgaben',
         'url' => 'projects.php?view=standalone',
         'icon' => 'fas fa-list-check',
         'permission' => 'ProjectManagement',

@@ -159,6 +159,35 @@ $view=(string)($_GET['view']??'overview');$pid=(int)($_GET['id']??0);if($view===
 $templates=$conn->query('SELECT * FROM project_templates WHERE is_active=1 ORDER BY name')->fetchAll(PDO::FETCH_ASSOC);$taskTemplates=$conn->query('SELECT * FROM task_templates WHERE is_active=1 ORDER BY sort_order,title')->fetchAll(PDO::FETCH_ASSOC);$editTemplate=null;$editTemplateTasks=[];if($view==='edit_template'&&$pid){$q=$conn->prepare('SELECT * FROM project_templates WHERE id=? AND is_active=1');$q->execute([$pid]);$editTemplate=$q->fetch(PDO::FETCH_ASSOC);if($editTemplate){$q=$conn->prepare('SELECT * FROM project_template_task_items WHERE project_template_id=? AND is_active=1 ORDER BY sort_order,id');$q->execute([$pid]);$editTemplateTasks=$q->fetchAll(PDO::FETCH_ASSOC);$templateResourceMap=[];if($editTemplateTasks){$templateIds=array_column($editTemplateTasks,'id');$in=implode(',',array_fill(0,count($templateIds),'?'));$rq=$conn->prepare("SELECT * FROM project_task_resources WHERE template_task_item_id IN ($in) ORDER BY created_at,id");$rq->execute($templateIds);foreach($rq->fetchAll(PDO::FETCH_ASSOC) as $rr)$templateResourceMap[$rr['template_task_item_id']][]=$rr;}}else{$errors[]='Projektvorlage nicht gefunden.';$view='templates';}}
 $projects=$conn->query("SELECT p.*, (SELECT COUNT(*) FROM tasks t WHERE t.project_id=p.id) task_count,(SELECT COUNT(*) FROM tasks t WHERE t.project_id=p.id AND t.status='done') done_count FROM projects p WHERE p.status<>'archived' ORDER BY CASE WHEN p.status='active' THEN 0 ELSE 1 END,COALESCE(p.event_date,p.start_date) DESC,p.id DESC")->fetchAll(PDO::FETCH_ASSOC);
 $standaloneOverview=$conn->query("SELECT s.*,u.full_name assignee FROM tasks s LEFT JOIN users u ON u.id=s.assigned_user_id WHERE s.project_id IS NULL ORDER BY CASE s.status WHEN 'open' THEN 0 WHEN 'in_progress' THEN 1 ELSE 2 END,s.due_date,s.id")->fetchAll(PDO::FETCH_ASSOC);
+
+// Gruppierung der Projektübersicht nach Kindergartenjahr (August bis Juli).
+$currentKindergartenYear=pmfy(date('Y-m-d'));
+$kindergartenYearStart=static function(string $yearLabel): int { return preg_match('/^(\d{4})/', $yearLabel, $m) ? (int)$m[1] : 0; };
+$sortKindergartenYears=static function(array &$groups) use ($currentKindergartenYear,$kindergartenYearStart): void {
+    uksort($groups, static function($a,$b) use ($currentKindergartenYear,$kindergartenYearStart): int {
+        if($a===$currentKindergartenYear) return -1;
+        if($b===$currentKindergartenYear) return 1;
+        $aStart=$kindergartenYearStart((string)$a); $bStart=$kindergartenYearStart((string)$b);
+        // Zukünftige Jahre nach dem aktuellen, chronologisch aufsteigend; vergangene danach, jüngste zuerst.
+        $currentStart=$kindergartenYearStart($currentKindergartenYear);
+        $aFuture=$aStart>$currentStart; $bFuture=$bStart>$currentStart;
+        if($aFuture && !$bFuture) return -1;
+        if(!$aFuture && $bFuture) return 1;
+        return $aFuture ? ($aStart<=>$bStart) : ($bStart<=>$aStart);
+    });
+};
+$projectsByKindergartenYear=[];
+foreach($projects as $projectRow){ $yearLabel=trim((string)($projectRow['fiscal_year']??'')); if($yearLabel==='') $yearLabel='Ohne Kindergartenjahr'; $projectsByKindergartenYear[$yearLabel][]=$projectRow; }
+$projectsByKindergartenYear[$currentKindergartenYear]=$projectsByKindergartenYear[$currentKindergartenYear]??[];
+$sortKindergartenYears($projectsByKindergartenYear);
+$standaloneByKindergartenYear=[];
+foreach($standaloneOverview as $standaloneRow){
+    $anchorDate=!empty($standaloneRow['start_date'])?(string)$standaloneRow['start_date']:(!empty($standaloneRow['due_date'])?(string)$standaloneRow['due_date']:null);
+    $yearLabel=$anchorDate?pmfy($anchorDate):'Ohne Kindergartenjahr';
+    $standaloneByKindergartenYear[$yearLabel][]=$standaloneRow;
+}
+$standaloneByKindergartenYear[$currentKindergartenYear]=$standaloneByKindergartenYear[$currentKindergartenYear]??[];
+$sortKindergartenYears($standaloneByKindergartenYear);
 $tasks=$conn->query("SELECT t.*,p.title project_title,p.color project_color,u.full_name assignee,(SELECT c.comment FROM task_comments c WHERE c.task_id=t.id ORDER BY c.created_at DESC,c.id DESC LIMIT 1) last_comment,(SELECT cu.full_name FROM task_comments c JOIN users cu ON cu.id=c.user_id WHERE c.task_id=t.id ORDER BY c.created_at DESC,c.id DESC LIMIT 1) last_comment_author,(SELECT c.created_at FROM task_comments c WHERE c.task_id=t.id ORDER BY c.created_at DESC,c.id DESC LIMIT 1) last_comment_at,(t.project_id IS NULL) AS is_standalone FROM tasks t LEFT JOIN projects p ON p.id=t.project_id LEFT JOIN users u ON u.id=t.assigned_user_id WHERE t.status<>'done' AND (t.project_id IS NULL OR p.status='active') ORDER BY t.due_date IS NULL,t.due_date,t.id")->fetchAll(PDO::FETCH_ASSOC);
 
 $groups=['overdue'=>[],'this_week'=>[],'next_week'=>[],'demnaechst'=>[]];
@@ -204,8 +233,82 @@ $project=null;$projectTasks=[];$comments=[];$openSiblingCount=0;if($view==='proj
 <nav class="pm-tabs"><a class="<?=$view==='overview'?'active':''?>" href="projects.php"><i class="fa-solid fa-list-check"></i> Aufgabenübersicht</a><a class="<?=$view==='new'?'active':''?>" href="projects.php?view=new"><i class="fa-solid fa-plus"></i> Projekt anlegen</a><a class="<?=$view==='standalone'?'active':''?>" href="projects.php?view=standalone"><i class="fa-solid fa-list-check"></i> Einzelaufgaben</a><a class="<?=$view==='templates'?'active':''?>" href="projects.php?view=templates"><i class="fa-solid fa-layer-group"></i> Vorlagen</a></nav>
 <?php if($view==='overview'):?>
 <section class="pm-section"><div class="pm-section-heading"><div><h2>Aufgaben nach Fälligkeit</h2></div></div><div class="pm-week-grid"><?php $labels=['overdue'=>'Überfällig','this_week'=>'Diese Woche','next_week'=>'Nächste Woche','demnaechst'=>'Demnächst'];foreach($labels as $g=>$label):?><section class="pm-week-column pm-<?=$g?>"><h3><?=pmh($label)?><span><?=count($groups[$g])?></span></h3><?php if(!$groups[$g]):?><p class="pm-empty">Keine Aufgaben</p><?php else:foreach($groups[$g] as $t):$projectColor=pmcolor($t['project_color']??null);?><article class="pm-task-row pm-task-tile" style="--project-color:<?=$projectColor?>" <?=empty($t['is_standalone'])?'data-task-url="projects.php?view=task&amp;id='.(int)$t['id'].'" tabindex="0" role="link"':''?> aria-label="Aufgabe: <?=pmh($t['title'])?>"><a class="pm-task-title" href="<?=!empty($t['is_standalone'])?'projects.php?view=task&amp;id='.(int)$t['id']:'projects.php?view=task&amp;id='.(int)$t['id']?>"><?=pmh($t['title'])?></a><div class="pm-task-project"><?=!empty($t['is_standalone'])?'Eigenständige Aufgabe':pmh($t['project_title'])?></div><?php if(!empty($t['last_comment'])):$lastComment=(string)$t['last_comment'];$commentWasCut=mb_strlen($lastComment,'UTF-8')>140;if($commentWasCut)$lastComment=mb_substr($lastComment,0,140,'UTF-8').'[...]';?><div class="pm-task-last-comment"><?=pmh($lastComment)?><?php if(!empty($t['last_comment_author'])):?><small> · <?=pmh($t['last_comment_author'])?></small><?php endif;?></div><?php endif;?><div class="pm-task-meta"><?php if($t['assignee']):?><span class="pm-assignee">Übernommen: <?=pmh($t['assignee'])?></span><?php endif;?></div><div class="pm-task-status-actions" aria-label="Aufgabenstatus ändern"><?php if($t['status']!=='in_progress'):?><form method="post"><input type="hidden" name="csrf_token" value="<?=pmh($csrf)?>"><input type="hidden" name="action" value="<?=!empty($t['is_standalone'])?'set_standalone_task_status':'set_task_status'?>"><input type="hidden" name="<?=!empty($t['is_standalone'])?'standalone_task_id':'task_id'?>" value="<?=$t['id']?>"><input type="hidden" name="status" value="in_progress"><input type="hidden" name="return_to" value="overview"><button class="pm-icon-button pm-icon-progress" type="submit" title="Als in Bearbeitung markieren" aria-label="Als in Bearbeitung markieren"><i class="fa-solid fa-play"></i></button></form><?php else:?><form method="post"><input type="hidden" name="csrf_token" value="<?=pmh($csrf)?>"><input type="hidden" name="action" value="<?=!empty($t['is_standalone'])?'set_standalone_task_status':'set_task_status'?>"><input type="hidden" name="<?=!empty($t['is_standalone'])?'standalone_task_id':'task_id'?>" value="<?=$t['id']?>"><input type="hidden" name="status" value="open"><input type="hidden" name="return_to" value="overview"><button class="pm-icon-button pm-icon-open" type="submit" title="Wieder auf offen setzen" aria-label="Wieder auf offen setzen"><i class="fa-solid fa-rotate-left"></i></button></form><?php endif;?><form method="post"><input type="hidden" name="csrf_token" value="<?=pmh($csrf)?>"><input type="hidden" name="action" value="<?=!empty($t['is_standalone'])?'set_standalone_task_status':'set_task_status'?>"><input type="hidden" name="<?=!empty($t['is_standalone'])?'standalone_task_id':'task_id'?>" value="<?=$t['id']?>"><input type="hidden" name="status" value="done"><input type="hidden" name="return_to" value="overview"><button class="pm-icon-button pm-icon-done" type="submit" title="Als erledigt markieren" aria-label="Als erledigt markieren"><i class="fa-regular fa-square-check"></i></button></form></div></article><?php endforeach;endif;?></section><?php endforeach;?></div></section>
-<section class="pm-section"><div class="pm-section-heading"><div><h2>Projekte</h2><p>Abgeschlossene Projekte bleiben erhalten.</p></div><a class="pm-button primary" href="projects.php?view=new">+ Neues Projekt</a></div><?php if(!$projects):?><div class="pm-empty-card">Noch keine Projekte angelegt. Erstelle ein Projekt aus einer Vorlage oder starte ein leeres Projekt.</div><?php else:?><div class="pm-project-grid"><?php foreach($projects as $p):$percent=(int)$p['task_count']?(int)round(100*$p['done_count']/$p['task_count']):0;?><a class="pm-project-card" style="--project-color:<?=pmcolor($p['color']??null)?>" href="projects.php?view=project&id=<?=$p['id']?>"><div class="pm-card-top"><span class="pm-status status-<?=pmh($p['status'])?>"><?=$p['status']==='completed'?'Abgeschlossen':'Aktiv'?></span><span class="pm-fiscal-year"><?=pmh($p['fiscal_year'])?></span></div><h3><?=pmh($p['title'])?></h3><p><?=pmh(mb_strimwidth((string)$p['description'],0,150,'…'))?></p><div class="pm-project-date"><?=$p['project_type']==='event'?'Veranstaltung: '.pmd($p['event_date']):'Projektstart: '.pmd($p['start_date'])?></div><div class="pm-progress"><span style="width:<?=$percent?>%"></span></div><div class="pm-progress-label"><?=$percent?> % erledigt · <?=$p['done_count']?> von <?=$p['task_count']?> Aufgaben</div></a><?php endforeach;?></div><?php endif;?></section>
-<section class="pm-section"><div class="pm-section-heading"><div><h2>Projektunabhängige Aufgaben</h2><p>Aufgaben ohne Zuordnung zu einem Projekt.</p></div><a class="pm-button primary" href="projects.php?view=standalone">+ Aufgabe anlegen</a></div><?php if(!$standaloneOverview):?><div class="pm-empty-card">Noch keine projektunabhängigen Aufgaben angelegt.</div><?php else:?><div class="pm-project-grid"><?php foreach($standaloneOverview as $st):$standaloneStatus=$st['status']==='done'?'Erledigt':($st['status']==='in_progress'?'In Bearbeitung':'Offen');?><a class="pm-project-card pm-standalone-card" style="--project-color:#DCEAF0" href="projects.php?view=task&amp;id=<?=$st['id']?>"><div class="pm-card-top"><span class="pm-status <?= $st['status']==='done'?'status-completed':($st['status']==='in_progress'?'status-active':'status-draft')?>"><?=pmh($standaloneStatus)?></span><?php if(!empty($st['recurrence_every'])):?><span class="pm-fiscal-year">Wiederkehrend</span><?php endif;?></div><h3><?=pmh($st['title'])?></h3><p><?=pmh(mb_strimwidth((string)$st['description'],0,150,'…'))?></p><div class="pm-project-date">Beginn: <?=pmd($st['start_date'])?> · Fällig: <?=pmd($st['due_date'])?></div><?php if(!empty($st['assignee'])):?><div class="pm-progress-label">Übernommen: <?=pmh($st['assignee'])?></div><?php endif;?><div class="pm-progress-label">Aufgabe bearbeiten →</div></a><?php endforeach;?></div><?php endif;?></section>
+<section class="pm-section">
+<div class="pm-section-heading"><div><h2>Projekte</h2><p>Nach Kindergartenjahr sortiert. Abgeschlossene Projekte bleiben erhalten.</p></div><a class="pm-button primary" href="projects.php?view=new">+ Neues Projekt</a></div>
+<?php foreach($projectsByKindergartenYear as $yearLabel=>$yearProjects):
+    $isCurrentProjectYear = $yearLabel === $currentKindergartenYear;
+    $completedYearProjects = $isCurrentProjectYear ? array_values(array_filter($yearProjects, static fn($row) => $row['status'] === 'completed')) : [];
+    $visibleYearProjects = $isCurrentProjectYear ? array_values(array_filter($yearProjects, static fn($row) => $row['status'] !== 'completed')) : $yearProjects;
+?>
+<details class="pm-year-group" <?=$isCurrentProjectYear?'open':''?>>
+    <summary><span>Kindergartenjahr <?=pmh($yearLabel)?></span><span class="pm-year-count"><?=count($yearProjects)?> Projekte</span></summary>
+    <?php if(!$yearProjects):?>
+        <div class="pm-empty-card">Für dieses Kindergartenjahr sind keine Projekte angelegt.</div>
+    <?php else:?>
+        <?php if($visibleYearProjects):?>
+            <div class="pm-project-grid">
+                <?php foreach($visibleYearProjects as $p):$percent=(int)$p['task_count']?(int)round(100*$p['done_count']/$p['task_count']):0;?>
+                    <a class="pm-project-card" style="--project-color:<?=pmcolor($p['color']??null)?>" href="projects.php?view=project&id=<?=$p['id']?>">
+                        <div class="pm-card-top"><span class="pm-status status-<?=pmh($p['status'])?>"><?=$p['status']==='completed'?'Abgeschlossen':'Aktiv'?></span><span class="pm-fiscal-year"><?=$p['project_type']==='event'?'Veranstaltung: '.pmh(pmd($p['event_date'])):pmh($p['fiscal_year'])?></span></div>
+                        <h3><?=pmh($p['title'])?></h3><div class="pm-progress"><span style="width:<?=$percent?>%"></span></div><div class="pm-progress-label"><?=$percent?> % erledigt · <?=$p['done_count']?> von <?=$p['task_count']?> Aufgaben</div>
+                    </a>
+                <?php endforeach;?>
+            </div>
+        <?php elseif($isCurrentProjectYear):?>
+            <div class="pm-empty-card">Keine offenen Projekte in diesem Kindergartenjahr.</div>
+        <?php endif;?>
+        <?php if($isCurrentProjectYear && $completedYearProjects):?>
+            <details class="pm-year-completed">
+                <summary><span>Abgeschlossene Projekte</span><span class="pm-year-count"><?=count($completedYearProjects)?> Projekte</span></summary>
+                <div class="pm-project-grid">
+                    <?php foreach($completedYearProjects as $p):$percent=(int)$p['task_count']?(int)round(100*$p['done_count']/$p['task_count']):0;?>
+                        <a class="pm-project-card" style="--project-color:<?=pmcolor($p['color']??null)?>" href="projects.php?view=project&id=<?=$p['id']?>">
+                            <div class="pm-card-top"><span class="pm-status status-completed">Abgeschlossen</span><span class="pm-fiscal-year"><?=$p['project_type']==='event'?'Veranstaltung: '.pmh(pmd($p['event_date'])):pmh($p['fiscal_year'])?></span></div>
+                            <h3><?=pmh($p['title'])?></h3><div class="pm-progress"><span style="width:<?=$percent?>%"></span></div><div class="pm-progress-label"><?=$percent?> % erledigt · <?=$p['done_count']?> von <?=$p['task_count']?> Aufgaben</div>
+                        </a>
+                    <?php endforeach;?>
+                </div>
+            </details>
+        <?php endif;?>
+    <?php endif;?>
+</details>
+<?php endforeach;?>
+</section>
+<section class="pm-section">
+<div class="pm-section-heading"><div><h2>Einzelaufgaben</h2><p>Projektunabhängige Aufgaben, nach Kindergartenjahr ihres Arbeitsbeginns sortiert.</p></div><a class="pm-button primary" href="projects.php?view=standalone">+ Aufgabe anlegen</a></div>
+<?php foreach($standaloneByKindergartenYear as $yearLabel=>$yearTasks):
+    $isCurrentTaskYear = $yearLabel === $currentKindergartenYear;
+    $completedYearTasks = $isCurrentTaskYear ? array_values(array_filter($yearTasks, static fn($row) => $row['status'] === 'done')) : [];
+    $visibleYearTasks = $isCurrentTaskYear ? array_values(array_filter($yearTasks, static fn($row) => $row['status'] !== 'done')) : $yearTasks;
+?>
+<details class="pm-year-group" <?=$isCurrentTaskYear?'open':''?>>
+    <summary><span>Kindergartenjahr <?=pmh($yearLabel)?></span><span class="pm-year-count"><?=count($yearTasks)?> Aufgaben</span></summary>
+    <?php if(!$yearTasks):?>
+        <div class="pm-empty-card">Für dieses Kindergartenjahr sind keine Einzelaufgaben angelegt.</div>
+    <?php else:?>
+        <?php if($visibleYearTasks):?>
+            <div class="pm-project-grid">
+                <?php foreach($visibleYearTasks as $st):$standaloneStatus=$st['status']==='done'?'Erledigt':($st['status']==='in_progress'?'In Bearbeitung':'Offen');?>
+                    <a class="pm-project-card pm-standalone-card" style="--project-color:#DCEAF0" href="projects.php?view=task&amp;id=<?=$st['id']?>"><div class="pm-card-top"><span class="pm-status <?= $st['status']==='done'?'status-completed':($st['status']==='in_progress'?'status-active':'status-draft')?>"><?=pmh($standaloneStatus)?></span><span class="pm-fiscal-year"><?=!empty($st['due_date'])?'Fällig: '.pmh(pmd($st['due_date'])):''?><?php if(!empty($st['recurrence_every'])):?> · Wiederkehrend<?php endif;?></span></div><h3><?=pmh($st['title'])?></h3><?php if(!empty($st['assignee'])):?><div class="pm-progress-label">Übernommen: <?=pmh($st['assignee'])?></div><?php endif;?></a>
+                <?php endforeach;?>
+            </div>
+        <?php elseif($isCurrentTaskYear):?>
+            <div class="pm-empty-card">Keine offenen Einzelaufgaben in diesem Kindergartenjahr.</div>
+        <?php endif;?>
+        <?php if($isCurrentTaskYear && $completedYearTasks):?>
+            <details class="pm-year-completed">
+                <summary><span>Erledigte Aufgaben</span><span class="pm-year-count"><?=count($completedYearTasks)?> Aufgaben</span></summary>
+                <div class="pm-project-grid">
+                    <?php foreach($completedYearTasks as $st):?>
+                        <a class="pm-project-card pm-standalone-card" style="--project-color:#DCEAF0" href="projects.php?view=task&amp;id=<?=$st['id']?>"><div class="pm-card-top"><span class="pm-status status-completed">Erledigt</span><span class="pm-fiscal-year"><?=!empty($st['due_date'])?'Fällig: '.pmh(pmd($st['due_date'])):''?><?php if(!empty($st['recurrence_every'])):?> · Wiederkehrend<?php endif;?></span></div><h3><?=pmh($st['title'])?></h3><?php if(!empty($st['assignee'])):?><div class="pm-progress-label">Übernommen: <?=pmh($st['assignee'])?></div><?php endif;?></a>
+                    <?php endforeach;?>
+                </div>
+            </details>
+        <?php endif;?>
+    <?php endif;?>
+</details>
+<?php endforeach;?>
+</section>
 <?php elseif($view==='new'):?>
 <section class="pm-section"><h2>Projekt anlegen</h2><p>Aufgaben aus Vorlagen werden kopiert. Du kannst vor dem Anlegen einzelne Aufgaben abwählen; die Vorlage bleibt unverändert.</p><form method="post" class="pm-form" id="pm-create-project"><input type="hidden" name="csrf_token" value="<?=pmh($csrf)?>"><input type="hidden" name="action" value="create_project"><div class="pm-form-grid"><label>Projektvorlage<select name="template_id" id="template-select"><option value="0">Leeres Projekt</option><?php foreach($templates as $t):?><option value="<?=$t['id']?>" data-type="<?=$t['project_type']?>"><?=pmh($t['name'])?></option><?php endforeach;?></select></label><label>Projekttyp<select name="project_type" id="project-type"><option value="event">Veranstaltung mit Termin</option><option value="project">Allgemeines Projekt</option></select></label><label class="wide">Name<input name="title" required placeholder="z. B. Sponsorenlauf 2027"></label><label class="wide">Beschreibung<textarea name="description" rows="2"></textarea></label><label class="event-field">Veranstaltungsdatum<input type="date" name="event_date" id="event-date"></label><label class="project-field">Projektstart<input type="date" name="start_date" id="start-date"></label><label class="project-field">Projektende (optional)<input type="date" name="end_date"></label></div><div class="pm-template-task-area"><h3>Aufgaben aus der Vorlage</h3><div id="template-task-list"><p class="pm-muted">Wähle eine Vorlage, um die Aufgaben anzuzeigen.</p></div></div><button class="pm-button primary" type="submit">Projekt erstellen</button></form></section>
 <?php elseif($view==='task'&&$taskDetail):$projectColor=pmcolor($taskDetail['project_color']??null);?>
