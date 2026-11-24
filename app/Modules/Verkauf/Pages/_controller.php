@@ -4,7 +4,7 @@ $appRoot=dirname(__DIR__,4);require_once $appRoot.'/auth.php';checkPermission('V
 require_once $appRoot.'/db_connection.php';require_once dirname(__DIR__).'/Support.php';
 $db=new Database();$conn=$db->getConnection();$conn->setAttribute(PDO::ATTR_ERRMODE,PDO::ERRMODE_EXCEPTION);
 if(empty($_SESSION['sales_csrf']))$_SESSION['sales_csrf']=bin2hex(random_bytes(32));$csrf=$_SESSION['sales_csrf'];
-function sh($v){return salesH($v);} function parseSalesOptions($names,$values){$out=[];foreach([1,2] as $n){$label=trim((string)($names[$n]??''));$raw=(string)($values[$n]??'');$vals=array_values(array_unique(array_filter(array_map('trim',preg_split('/[,\r\n]+/',$raw)),fn($v)=>$v!=='')));if($label===''&&$vals)throw new RuntimeException('Bitte gib für jede Ausprägung eine Bezeichnung an.');if($label!==''&&!$vals)throw new RuntimeException('Bitte gib mindestens einen Wert für „'.$label.'“ an.');if($label!=='' )$out[]=['name'=>$label,'values'=>$vals];}return $out;} function saveSalesOptions(PDO $conn,int $itemId,array $options){$conn->prepare('DELETE FROM sales_item_options WHERE item_id=?')->execute([$itemId]);$ins=$conn->prepare('INSERT INTO sales_item_options(item_id,property_no,property_name) VALUES(?,?,?)');$val=$conn->prepare('INSERT INTO sales_item_option_values(option_id,value_text,sort_order) VALUES(?,?,?)');foreach($options as $i=>$option){$ins->execute([$itemId,$i+1,$option['name']]);$oid=(int)$conn->lastInsertId();foreach($option['values'] as $j=>$value)$val->execute([$oid,$value,$j+1]);}} function loadSalesOptions(PDO $conn,int $itemId){$q=$conn->prepare('SELECT o.id,o.property_no,o.property_name,v.id value_id,v.value_text FROM sales_item_options o LEFT JOIN sales_item_option_values v ON v.option_id=o.id WHERE o.item_id=? ORDER BY o.property_no,v.sort_order,v.id');$q->execute([$itemId]);$result=[];foreach($q->fetchAll(PDO::FETCH_ASSOC) as $r){$n=(int)$r['property_no'];if(!isset($result[$n]))$result[$n]=['id'=>(int)$r['id'],'name'=>$r['property_name'],'values'=>[]];if($r['value_id']!==null)$result[$n]['values'][]=$r['value_text'];}return $result;} function goSales($msg='', $backToAction=true){global $salesPage;$aid=$backToAction?(int)($_POST['action_id']??0):0;$params=[];if($aid)$params['aktion']=$aid;if($msg)$params['meldung']=$msg;$targetPage=$backToAction?$salesPage:'list';$target=$targetPage==='overview'?'verkauf_uebersicht.php':'verkauf.php';header('Location: '.$target.($params?'?'.http_build_query($params):''));exit;}
+function sh($v){return salesH($v);} function parseSalesOptions($names,$values){$out=[];foreach([1,2] as $n){$label=trim((string)($names[$n]??''));$raw=(string)($values[$n]??'');$vals=array_values(array_unique(array_filter(array_map('trim',preg_split('/[,\r\n]+/',$raw)),fn($v)=>$v!=='')));if($label===''&&$vals)throw new RuntimeException('Bitte gib für jede Ausprägung eine Bezeichnung an.');if($label!==''&&!$vals)throw new RuntimeException('Bitte gib mindestens einen Wert für „'.$label.'“ an.');if($label!=='' )$out[]=['name'=>$label,'values'=>$vals];}return $out;} function saveSalesOptions(PDO $conn,int $itemId,array $options){$conn->prepare('DELETE FROM sales_item_options WHERE item_id=?')->execute([$itemId]);$ins=$conn->prepare('INSERT INTO sales_item_options(item_id,property_no,property_name) VALUES(?,?,?)');$val=$conn->prepare('INSERT INTO sales_item_option_values(option_id,value_text,sort_order) VALUES(?,?,?)');foreach($options as $i=>$option){$ins->execute([$itemId,$i+1,$option['name']]);$oid=(int)$conn->lastInsertId();foreach($option['values'] as $j=>$value)$val->execute([$oid,$value,$j+1]);}} function loadSalesOptions(PDO $conn,int $itemId){$q=$conn->prepare('SELECT o.id,o.property_no,o.property_name,v.id value_id,v.value_text FROM sales_item_options o LEFT JOIN sales_item_option_values v ON v.option_id=o.id WHERE o.item_id=? ORDER BY o.property_no,v.sort_order,v.id');$q->execute([$itemId]);$result=[];foreach($q->fetchAll(PDO::FETCH_ASSOC) as $r){$n=(int)$r['property_no'];if(!isset($result[$n]))$result[$n]=['id'=>(int)$r['id'],'name'=>$r['property_name'],'values'=>[]];if($r['value_id']!==null)$result[$n]['values'][]=$r['value_text'];}return $result;} function goSales($msg='', $backToAction=true){global $salesPage;$aid=$backToAction?(int)($_POST['action_id']??0):0;$params=[];if($aid)$params['aktion']=$aid;if($salesPage==='overview' && !empty($_POST['open_order']))$params['open_order']=(int)$_POST['open_order'];if($msg)$params['meldung']=$msg;$targetPage=$backToAction?$salesPage:'list';$target=$targetPage==='overview'?'verkauf_uebersicht.php':'verkauf.php';header('Location: '.$target.($params?'?'.http_build_query($params):''));exit;}
 $notice=(string)($_GET['meldung']??'');$error='';
 $conn->exec("UPDATE sales_actions SET status='closed' WHERE status='active' AND end_date < CURDATE()");
 try{
@@ -72,19 +72,41 @@ if($salesPage!=='list'){
  $q=$conn->prepare('SELECT * FROM sales_actions WHERE id=?');$q->execute([$selected]);$action=$q->fetch(PDO::FETCH_ASSOC);
  if(!$action){header('Location: verkauf.php');exit;}
 }
-$items=[];$itemOptions=[];$orders=[];$internal=[];$stats=['revenue'=>0,'paid'=>0,'purchase'=>0,'qty'=>0];
+$items=[];$itemOptions=[];$orders=[];$orderItemsByOrder=[];$internal=[];$stats=['revenue'=>0,'paid'=>0,'purchase'=>0,'qty'=>0];
 if($action){
  $q=$conn->prepare('SELECT * FROM sales_items WHERE action_id=? ORDER BY sort_order,id');$q->execute([$selected]);$items=$q->fetchAll(PDO::FETCH_ASSOC);
  if(in_array($salesPage,['edit','overview'],true)){foreach($items as $it)$itemOptions[(int)$it['id']]=loadSalesOptions($conn,(int)$it['id']);}
  if($salesPage==='overview'){
-  $q=$conn->prepare('SELECT * FROM sales_orders WHERE action_id=? ORDER BY created_at DESC,id DESC');$q->execute([$selected]);$orders=$q->fetchAll(PDO::FETCH_ASSOC);
+  $q=$conn->prepare('SELECT so.*, sg.name AS group_name FROM sales_orders so LEFT JOIN sales_groups sg ON sg.id=so.group_id WHERE so.action_id=? ORDER BY so.created_at DESC,so.id DESC');$q->execute([$selected]);$orders=$q->fetchAll(PDO::FETCH_ASSOC);
+  $orderItemsByOrder=[];
+  $orderItemsQuery=$conn->prepare('SELECT soi.* FROM sales_order_items soi JOIN sales_orders so ON so.id=soi.order_id WHERE so.action_id=? ORDER BY soi.order_id,soi.id');
+  $orderItemsQuery->execute([$selected]);
+  foreach($orderItemsQuery->fetchAll(PDO::FETCH_ASSOC) as $orderItemRow){$orderItemsByOrder[(int)$orderItemRow['order_id']][]=$orderItemRow;}
   $q=$conn->prepare('SELECT item_id,quantity FROM sales_internal_order_items WHERE action_id=?');$q->execute([$selected]);foreach($q->fetchAll(PDO::FETCH_ASSOC) as $r)$internal[(int)$r['item_id']]=(int)$r['quantity'];
-  // Bestellte Mengen je Eigenschaftskombination für die aufklappbare Artikelaufschlüsselung.
-  $variantQuantities=[];$vq=$conn->prepare('SELECT soi.item_id,soi.variant_text,SUM(soi.quantity) quantity FROM sales_order_items soi JOIN sales_orders so ON so.id=soi.order_id WHERE so.action_id=? GROUP BY soi.item_id,soi.variant_text');$vq->execute([$selected]);
-  foreach($vq->fetchAll(PDO::FETCH_ASSOC) as $vr){$iid=(int)$vr['item_id'];$variantQuantities[$iid][(string)$vr['variant_text']]=(int)$vr['quantity'];}
+  // Tatsächlich bestellte Eigenschaftskombinationen laden.
+  // Nicht aus den möglichen Artikeloptionen ableiten: Es sollen ausschließlich
+  // Kombinationen erscheinen, für die mindestens eine Elternbestellung vorliegt.
   $variantBreakdowns=[];
-  foreach($items as $it){$iid=(int)$it['id'];$opts=$itemOptions[$iid]??[];if(!$opts)continue;$combinations=[[]];foreach($opts as $op){$next=[];foreach($combinations as $combination){foreach($op['values'] as $value){$copy=$combination;$copy[]=$op['name'].': '.$value;$next[]=$copy;}}$combinations=$next;}
-   foreach($combinations as $combination){$variantText=implode(' · ',$combination);$variantBreakdowns[$iid][]=['label'=>$variantText,'quantity'=>$variantQuantities[$iid][$variantText]??0];}
+  $vq=$conn->prepare("
+   SELECT soi.item_id, TRIM(soi.variant_text) AS variant_text,
+          SUM(soi.quantity) AS quantity
+   FROM sales_order_items soi
+   JOIN sales_orders so ON so.id=soi.order_id
+   WHERE so.action_id=?
+     AND soi.quantity>0
+     AND TRIM(COALESCE(soi.variant_text,''))<>''
+   GROUP BY soi.item_id, TRIM(soi.variant_text)
+   ORDER BY soi.item_id, TRIM(soi.variant_text)
+  ");
+  $vq->execute([$selected]);
+  foreach($vq->fetchAll(PDO::FETCH_ASSOC) as $vr){
+   $iid=(int)$vr['item_id'];
+   $quantity=(int)$vr['quantity'];
+   if($quantity<1)continue;
+   $variantBreakdowns[$iid][]=[
+    'label'=>(string)$vr['variant_text'],
+    'quantity'=>$quantity
+   ];
   }
   foreach($items as $it){$parentQty=0;foreach($orders as $o){$q=$conn->prepare('SELECT COALESCE(SUM(quantity),0) FROM sales_order_items WHERE order_id=? AND item_id=?');$q->execute([$o['id'],$it['id']]);$parentQty+=(int)$q->fetchColumn();}$all=$parentQty+($internal[$it['id']]??0);$stats['qty']+=$all;$stats['purchase']+=$all*(int)$it['purchase_price_cents'];}
   foreach($orders as $o){$stats['revenue']+=(int)$o['total_cents'];if($o['is_paid'])$stats['paid']+=(int)$o['total_cents'];}

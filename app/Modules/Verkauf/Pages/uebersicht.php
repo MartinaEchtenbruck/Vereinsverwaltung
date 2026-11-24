@@ -2,24 +2,252 @@
 if (!defined('APP_ENTRY_POINT')) { http_response_code(404); exit; }
 $salesPage='overview';
 require __DIR__.'/_controller.php';
+$openVariantIds = [];
+$openVariantParam = $_GET['open_variant'] ?? '';
+if (is_array($openVariantParam)) {
+    $openVariantIds = array_values(array_unique(array_filter(array_map('intval', $openVariantParam), static fn($id) => $id > 0)));
+} elseif (is_string($openVariantParam) && $openVariantParam !== '') {
+    $openVariantIds = array_values(array_unique(array_filter(array_map('intval', explode(',', $openVariantParam)), static fn($id) => $id > 0)));
+} elseif (is_numeric($openVariantParam) && (int)$openVariantParam > 0) {
+    $openVariantIds = [(int)$openVariantParam];
+}
+$openOrderId = (int)($_GET['open_order'] ?? 0);
+if ($openOrderId > 0) {
+    $knownOrderIds = array_map(static fn($row) => (int)$row['id'], $orders);
+    if (!in_array($openOrderId, $knownOrderIds, true)) $openOrderId = 0;
+}
 require __DIR__.'/_layout_start.php';
 ?>
+<style>
+.sales-collapsible > summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    cursor: pointer;
+    list-style: none;
+    font-size: 1.2rem;
+    font-weight: 700;
+    line-height: 1.3;
+}
+.sales-collapsible > summary::-webkit-details-marker { display: none; }
+.sales-collapsible > summary::after {
+    content: '+';
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border: 1px solid #d5dee5;
+    border-radius: 6px;
+    color: #52616b;
+    font-size: 1.15rem;
+    font-weight: 500;
+}
+.sales-collapsible[open] > summary::after { content: '−'; }
+.sales-collapsible-content { margin-top: 16px; }
+
+/* Parent- und Child-Zeilen als zusammengehörige Gruppe darstellen */
+.finance-table { border-collapse: separate; border-spacing: 0; }
+.finance-table tr.finance-variant-group > td { border-bottom: 0; }
+.finance-table tr.finance-item-row.finance-variant-group > td {
+    background: #f6f8fa;
+    border-top: 1px solid #dce3e8;
+}
+.finance-table tr.finance-item-row.finance-variant-group > td:first-child {
+    border-left: 1px solid #dce3e8;
+    border-top-left-radius: 7px;
+}
+.finance-table tr.finance-item-row.finance-variant-group > td:last-child {
+    border-right: 1px solid #dce3e8;
+    border-top-right-radius: 7px;
+}
+.finance-table tr.finance-item-row.finance-variant-group.is-open > td { border-bottom: 0; }
+.finance-table tr.finance-item-row.finance-variant-group:not(.is-open) > td {
+    border-bottom: 1px solid #dce3e8;
+}
+.finance-table tr.finance-item-row.finance-variant-group:not(.is-open) > td:first-child {
+    border-bottom-left-radius: 7px;
+}
+.finance-table tr.finance-item-row.finance-variant-group:not(.is-open) > td:last-child {
+    border-bottom-right-radius: 7px;
+}
+.finance-table tr.variant-detail-row.finance-variant-group > td {
+    background: #fafbfc;
+    border-top: 0;
+    border-bottom: 0;
+}
+.finance-table tr.variant-detail-row.finance-variant-group > td:first-child {
+    border-left: 1px solid #dce3e8;
+    padding-left: 30px;
+}
+.finance-table tr.variant-detail-row.finance-variant-group > td:last-child {
+    border-right: 1px solid #dce3e8;
+}
+.finance-table tr.variant-detail-row.finance-variant-group.is-last > td {
+    border-bottom: 1px solid #dce3e8;
+}
+.finance-table tr.variant-detail-row.finance-variant-group.is-last > td:first-child {
+    border-bottom-left-radius: 7px;
+}
+.finance-table tr.variant-detail-row.finance-variant-group.is-last > td:last-child {
+    border-bottom-right-radius: 7px;
+}
+.finance-table tr.finance-item-row.finance-variant-group.is-open:hover > td,
+.finance-table tr.variant-detail-row.finance-variant-group:hover > td {
+    background: #f3f6f8;
+}
+</style>
 <section class="card action-header"><a href="verkauf.php?aktion=<?=$selected?>" class="back-link"><i class="fas fa-arrow-left"></i> Zurück zur Aktionsbearbeitung</a><div class="action-title-row"><div><h2><?=sh($action['title'])?> <span class="tag <?=sh($action['status'])?>"><?=['draft'=>'Entwurf','active'=>'Aktiv','closed'=>'Bestellschluss erreicht','completed'=>'Abgeschlossen'][$action['status']]?></span></h2><p class="action-period">Zeitraum: <?=date('d.m.Y',strtotime($action['start_date']))?> – <?=date('d.m.Y',strtotime($action['end_date']))?></p><p class="action-description"><?=nl2br(sh($action['description']??''))?></p></div></div><p>Öffentliche Bestellseite: <a href="../bestellen/" target="_blank" rel="noopener">/bestellen/</a></p>
 <?php if(in_array($action['status'],['active','closed'],true)): ?><form method="post" onsubmit="return confirm('Aktion abschließen? Danach sind die Werte eingefroren.');"><input type="hidden" name="csrf_token" value="<?=sh($csrf)?>"><input type="hidden" name="do" value="complete_action"><input type="hidden" name="action_id" value="<?=$selected?>"><button class="btn btn-success btnwide">Aktion abschließen und Werte einfrieren</button></form><?php endif; ?></section>
-<section class="card"><h2>Finanzübersicht</h2><div class="stats"><div class="stat">Erwarteter Verkaufserlös<strong><?=salesMoney($stats['revenue'])?></strong></div><div class="stat">Zahlungseingänge<br>(bezahlt markiert)<strong><?=salesMoney($stats['paid'])?></strong></div><div class="stat">Einkaufskosten<strong><?=salesMoney($stats['purchase'])?></strong></div><div class="stat">Gesamtkosten<strong><?=salesMoney($stats['purchase'])?></strong></div><div class="stat">Voraussichtlicher Überschuss<strong><?=salesMoney($stats['revenue']-$stats['purchase'])?></strong></div></div><?php if($variantBreakdowns): ?><p class="muted">Artikel mit Ausprägungen lassen sich aufklappen. Die Aufschlüsselung zeigt die Elternbestellungen je Eigenschaftskombination; interne Mengen werden nur auf Artikelebene erfasst.</p><?php endif; ?><div class="tablewrap"><table class="finance-table"><thead><tr><th>Artikel</th><th>Elternmenge</th><th>Interne Menge</th><th>Gesamt zu bestellen</th><th>Einkaufspreis</th><th>Gesamtkosten</th></tr></thead><tbody><?php foreach($items as $it): $pq=0;foreach($orders as $o){$q=$conn->prepare('SELECT COALESCE(SUM(quantity),0) FROM sales_order_items WHERE order_id=? AND item_id=?');$q->execute([$o['id'],$it['id']]);$pq+=(int)$q->fetchColumn();}$iq=$internal[$it['id']]??0;$totalQty=$pq+$iq;$iid=(int)$it['id'];$hasVariants=!empty($variantBreakdowns[$iid]); ?><tr class="finance-item-row"><td><?php if($hasVariants): ?><button type="button" class="variant-toggle" aria-expanded="false" aria-controls="variant-rows-<?=$iid?>" data-target="variant-rows-<?=$iid?>"><i class="fas fa-chevron-right" aria-hidden="true"></i> <?=sh($it['name'])?></button><?php else: ?><?=sh($it['name'])?><?php endif; ?></td><td><?=$pq?></td><td><?=$iq?></td><td><strong><?=$totalQty?></strong></td><td><?=salesMoney((int)$it['purchase_price_cents'])?></td><td><?=salesMoney($totalQty*(int)$it['purchase_price_cents'])?></td></tr><?php if($hasVariants): foreach($variantBreakdowns[$iid] as $variant): $variantQty=(int)$variant['quantity']; ?><tr class="variant-detail-row" data-parent="variant-rows-<?=$iid?>" hidden><td><span class="variant-detail-label">↳ <?=sh($variant['label'])?></span></td><td><?=$variantQty?></td><td>–</td><td><?=$variantQty?></td><td><?=salesMoney((int)$it['purchase_price_cents'])?></td><td><?=salesMoney($variantQty*(int)$it['purchase_price_cents'])?></td></tr><?php endforeach; endif; ?><?php endforeach; ?></tbody></table></div></section>
-<section class="card"><h2>Interne Bestellung (Kindergarten)</h2><p>Hier die zusätzlichen Mengen für den Kindergarten eintragen. Alle Artikel stehen zur Verfügung, auch solche, die nicht an Eltern verkauft werden.</p><form method="post"><input type="hidden" name="csrf_token" value="<?=sh($csrf)?>"><input type="hidden" name="do" value="save_internal"><input type="hidden" name="action_id" value="<?=$selected?>"><div class="tablewrap"><table><thead><tr><th>Artikel</th><th>Einkaufspreis</th><th>Interne Menge</th></tr></thead><tbody><?php foreach($items as $it): ?><tr><td><?=sh($it['name'])?></td><td><?=salesMoney((int)$it['purchase_price_cents'])?></td><td><input type="number" name="internal_qty[<?=$it['id']?>]" min="0" max="100000" value="<?=$internal[$it['id']]??0?>" <?=$action['status']==='completed'?'disabled':''?>></td></tr><?php endforeach; ?></tbody></table></div><?php if($action['status']!=='completed'): ?><button class="btn btn-primary btnwide">Interne Bestellung speichern</button><?php endif; ?></form></section>
-<section class="card"><h2>Elternbestellungen (<?=count($orders)?>)</h2><div class="filters"><input id="orderSearch" placeholder="Name oder E-Mail suchen"><select id="groupFilter"><option value="">Alle Gruppen</option><?php foreach($groups as $g): ?><option value="<?=sh($g['name'])?>"><?=sh($g['name'])?></option><?php endforeach; ?></select><select id="statusFilter"><option value="">Alle Bestellungen</option><option value="unpaid">Nicht bezahlt</option><option value="unpacked">Nicht gepackt</option><option value="unissued">Nicht ausgegeben</option></select></div><div class="tablewrap"><table id="ordersTable"><thead><tr><th>Bestellnr.</th><th>Name / E-Mail</th><th>Gruppe</th><?php foreach($items as $it): ?><th><?=sh($it['name'])?></th><?php endforeach; ?><th>Gesamt</th><th>Bezahlt</th><th>Gepackt</th><th>Ausgegeben</th><th></th></tr></thead><tbody><?php foreach($orders as $o): $q=$conn->prepare('SELECT group_name FROM sales_groups WHERE id=?');$q->execute([$o['group_id']]);$gname=(string)$q->fetchColumn();$oi=$conn->prepare('SELECT item_id,quantity,variant_text FROM sales_order_items WHERE order_id=?');$oi->execute([$o['id']]);$qtymap=[];$variantmap=[];foreach($oi->fetchAll(PDO::FETCH_ASSOC) as $r){$qtymap[(int)$r['item_id']]=(int)$r['quantity'];if(!empty($r['variant_text']))$variantmap[(int)$r['item_id']][]=$r['variant_text'];} ?><tr data-name="<?=sh(mb_strtolower($o['customer_name'].' '.$o['customer_email']))?>" data-group="<?=sh($gname)?>" data-paid="<?=$o['is_paid']?'1':'0'?>" data-packed="<?=$o['is_packed']?'1':'0'?>" data-issued="<?=$o['is_issued']?'1':'0'?>"><td><?=sh($o['order_number'])?><br><small><?=date('d.m.Y H:i',strtotime($o['created_at']))?></small></td><td><strong><?=sh($o['customer_name'])?></strong><br><a href="mailto:<?=sh($o['customer_email'])?>"><?=sh($o['customer_email'])?></a></td><td><?=sh($gname)?></td><?php foreach($items as $it): ?><td><?=$qtymap[$it['id']]??0?><?php if(!empty($variantmap[$it['id']])): ?><br><small><?=sh(implode('; ',$variantmap[$it['id']]))?></small><?php endif; ?></td><?php endforeach; ?><td><?=salesMoney((int)$o['total_cents'])?></td><?php foreach(['is_paid'=>'Bezahlt','is_packed'=>'Gepackt','is_issued'=>'Ausgegeben'] as $field=>$label): ?><td><form method="post"><input type="hidden" name="csrf_token" value="<?=sh($csrf)?>"><input type="hidden" name="do" value="order_status"><input type="hidden" name="action_id" value="<?=$selected?>"><input type="hidden" name="order_id" value="<?=$o['id']?>"><input type="hidden" name="field" value="<?=$field?>"><input type="checkbox" name="value" value="1" <?=$o[$field]?'checked':''?> onchange="this.form.submit()" aria-label="<?=$label?> für <?=sh($o['customer_name'])?>"></form></td><?php endforeach; ?><td><form method="post" onsubmit="return confirm('Bestellung endgültig löschen? Sie wird vollständig aus allen Berechnungen entfernt.');"><input type="hidden" name="csrf_token" value="<?=sh($csrf)?>"><input type="hidden" name="do" value="delete_order"><input type="hidden" name="action_id" value="<?=$selected?>"><input type="hidden" name="order_id" value="<?=$o['id']?>"><button class="smallbtn" title="Bestellung löschen"><i class="fas fa-trash"></i></button></form></td></tr><?php endforeach; ?></tbody></table></div></section>
-<style>
-.finance-table .variant-toggle{display:inline-flex;align-items:center;gap:9px;padding:0;border:0;background:transparent;color:inherit;font:inherit;font-weight:600;text-align:left;cursor:pointer}
-.finance-table .variant-toggle:hover{text-decoration:underline}
-.finance-table .variant-toggle i{font-size:.75em;color:#64717b;transition:transform .15s ease}
-.finance-table .variant-toggle[aria-expanded="true"] i{transform:rotate(90deg)}
-.finance-table .variant-detail-row{background:#f7f9fa;color:#56616b}
-.finance-table .variant-detail-label{display:inline-block;padding-left:24px;font-size:.94em}
-.finance-table .variant-detail-row td{border-top:1px solid #edf0f2}
-</style>
+<details class="card sales-collapsible"<?= $openVariantIds ? ' open' : '' ?>><summary>Finanzübersicht</summary><div class="sales-collapsible-content"><div class="stats"><div class="stat">Erwarteter Verkaufserlös<strong><?=salesMoney($stats['revenue'])?></strong></div><div class="stat">Zahlungseingänge<br>(bezahlt markiert)<strong><?=salesMoney($stats['paid'])?></strong></div><div class="stat">Einkaufskosten<strong><?=salesMoney($stats['purchase'])?></strong></div><div class="stat">Gesamtkosten<strong><?=salesMoney($stats['purchase'])?></strong></div><div class="stat">Voraussichtlicher Überschuss<strong><?=salesMoney($stats['revenue']-$stats['purchase'])?></strong></div></div><?php if($variantBreakdowns): ?><p class="muted">Artikel mit Ausprägungen lassen sich aufklappen. Die Aufschlüsselung zeigt die Elternbestellungen je Eigenschaftskombination; interne Mengen werden nur auf Artikelebene erfasst.</p><?php endif; ?><div class="tablewrap"><table class="finance-table"><thead><tr><th>Artikel</th><th>Elternmenge</th><th>Interne Menge</th><th>Gesamt zu bestellen</th><th>Einkaufspreis</th><th>Gesamtkosten</th></tr></thead><tbody><?php foreach($items as $it): $pq=0;foreach($orders as $o){$q=$conn->prepare('SELECT COALESCE(SUM(quantity),0) FROM sales_order_items WHERE order_id=? AND item_id=?');$q->execute([$o['id'],$it['id']]);$pq+=(int)$q->fetchColumn();}$iq=$internal[$it['id']]??0;$totalQty=$pq+$iq;$iid=(int)$it['id'];$hasVariants=!empty($variantBreakdowns[$iid]);$isVariantOpen=$hasVariants && in_array($iid,$openVariantIds,true);$nextOpenVariantIds=$openVariantIds;if($isVariantOpen){$nextOpenVariantIds=array_values(array_diff($nextOpenVariantIds,[$iid]));}else{$nextOpenVariantIds[]=$iid;$nextOpenVariantIds=array_values(array_unique($nextOpenVariantIds));}$variantUrl='verkauf_uebersicht.php?aktion='.$selected.($nextOpenVariantIds?'&open_variant='.implode(',',$nextOpenVariantIds):'').'#finance-item-'.$iid; ?><tr id="finance-item-<?=$iid?>" class="finance-item-row<?=$hasVariants?' has-variants finance-variant-group':''?><?=$isVariantOpen?' is-open':''?>" <?php if($hasVariants): ?>tabindex="0" role="button" aria-expanded="<?=$isVariantOpen?'true':'false'?>" aria-label="Details zu <?=sh($it['name'])?> <?=$isVariantOpen?'ausblenden':'anzeigen'?>" onclick="window.location.href='<?=sh($variantUrl)?>'" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();window.location.href='<?=sh($variantUrl)?>'}"<?php endif; ?>><td><span class="finance-item-name"><?=sh($it['name'])?></span></td><td><?=$pq?></td><td><?=$iq?></td><td><strong><?=$totalQty?></strong></td><td><?=salesMoney((int)$it['purchase_price_cents'])?></td><td><?=salesMoney($totalQty*(int)$it['purchase_price_cents'])?><?php if($hasVariants): ?> <button type="button" class="variant-toggle-icon" aria-expanded="<?=$isVariantOpen?'true':'false'?>" title="<?=$isVariantOpen?'Eigenschaften ausblenden':'Eigenschaften anzeigen'?>" aria-label="Eigenschaften von <?=sh($it['name'])?> <?=$isVariantOpen?'ausblenden':'anzeigen'?>" onclick="event.stopPropagation();window.location.href='<?=sh($variantUrl)?>'"><i class="fas fa-search" aria-hidden="true"></i></button><?php endif; ?></td></tr><?php if($isVariantOpen): $variantCount=count($variantBreakdowns[$iid]); foreach($variantBreakdowns[$iid] as $variantIndex=>$variant): $variantQty=(int)$variant['quantity']; ?><tr class="variant-detail-row finance-variant-group variant-detail-parent-<?=$iid?><?=$variantIndex===$variantCount-1?' is-last':''?>"><td><span class="variant-detail-label">↳ <?=sh($variant['label'])?></span></td><td><?=$variantQty?></td><td>–</td><td><?=$variantQty?></td><td><?=salesMoney((int)$it['purchase_price_cents'])?></td><td><?=salesMoney($variantQty*(int)$it['purchase_price_cents'])?></td></tr><?php endforeach; endif; ?><?php endforeach; ?></tbody></table></div></div></details>
+<details class="card sales-collapsible"><summary>Interne Bestellung (Kindergarten)</summary><div class="sales-collapsible-content"><p>Hier die zusätzlichen Mengen für den Kindergarten eintragen. Alle Artikel stehen zur Verfügung, auch solche, die nicht an Eltern verkauft werden.</p><form method="post"><input type="hidden" name="csrf_token" value="<?=sh($csrf)?>"><input type="hidden" name="do" value="save_internal"><input type="hidden" name="action_id" value="<?=$selected?>"><div class="tablewrap"><table><thead><tr><th>Artikel</th><th>Einkaufspreis</th><th>Interne Menge</th></tr></thead><tbody><?php foreach($items as $it): ?><tr><td><?=sh($it['name'])?></td><td><?=salesMoney((int)$it['purchase_price_cents'])?></td><td><input type="number" name="internal_qty[<?=$it['id']?>]" min="0" max="100000" value="<?=$internal[$it['id']]??0?>" <?=$action['status']==='completed'?'disabled':''?>></td></tr><?php endforeach; ?></tbody></table></div><?php if($action['status']!=='completed'): ?><button class="btn btn-primary btnwide">Interne Bestellung speichern</button><?php endif; ?></form></div></details>
+<section class="card parent-orders-card" id="parent-orders">
+  <h2>Elternbestellungen (<?=count($orders)?>)</h2>
+  <div class="filters order-filters">
+    <input id="orderSearch" type="search" placeholder="Name, E-Mail oder Bestellnummer suchen" aria-label="Bestellungen suchen">
+    <select id="groupFilter" aria-label="Gruppe filtern"><option value="">Alle Gruppen</option><?php foreach($groups as $groupRow): ?><option value="<?=sh($groupRow['name'])?>"><?=sh($groupRow['name'])?></option><?php endforeach; ?></select>
+    <select id="statusFilter" aria-label="Bestellstatus filtern"><option value="">Alle Bestellungen</option><option value="unpaid">Nicht bezahlt</option><option value="unpacked">Nicht gepackt</option><option value="unissued">Nicht ausgegeben</option></select>
+  </div>
+  <div class="tablewrap">
+    <table id="ordersTable" class="orders-table">
+      <thead><tr><th>Bestellnr.</th><th>Name</th><th>E-Mail</th><th>Gruppe</th><th>Gesamt</th><th>Bezahlt</th><th>Gepackt</th><th>Ausgegeben</th></tr></thead>
+      <tbody>
+      <?php if(!$orders): ?><tr><td colspan="8" class="orders-empty">Für diese Verkaufsaktion sind noch keine Elternbestellungen eingegangen.</td></tr><?php endif; ?>
+      <?php foreach($orders as $orderRow):
+        $orderId=(int)$orderRow['id'];
+        $isOrderOpen=($openOrderId===$orderId);
+        $orderUrlParams=['aktion'=>$selected];
+        if($openVariantIds)$orderUrlParams['open_variant']=implode(',',$openVariantIds);
+        if(!$isOrderOpen)$orderUrlParams['open_order']=$orderId;
+        $orderUrl='verkauf_uebersicht.php?'.http_build_query($orderUrlParams).'#order-'.$orderId;
+        $groupName=(string)($orderRow['group_name']??'');
+        $orderLines=$orderItemsByOrder[$orderId]??[];
+      ?>
+        <tr id="order-<?=$orderId?>" class="order-summary-row<?=$isOrderOpen?' is-open':''?>"
+            data-name="<?=sh(mb_strtolower($orderRow['customer_name'].' '.$orderRow['customer_email'].' '.$orderRow['order_number']))?>"
+            data-group="<?=sh($groupName)?>" data-paid="<?=$orderRow['is_paid']?'1':'0'?>" data-packed="<?=$orderRow['is_packed']?'1':'0'?>" data-issued="<?=$orderRow['is_issued']?'1':'0'?>"
+            tabindex="0" role="button" aria-expanded="<?=$isOrderOpen?'true':'false'?>"
+            aria-label="Bestellung <?=sh($orderRow['order_number'])?> von <?=sh($orderRow['customer_name'])?> <?=$isOrderOpen?'Details schließen':'Details öffnen'?>"
+            onclick="window.location.href='<?=sh($orderUrl)?>'"
+            onkeydown="if((event.key==='Enter'||event.key===' ') && event.target===this){event.preventDefault();window.location.href='<?=sh($orderUrl)?>'}">
+          <td><strong><?=sh($orderRow['order_number'])?></strong><small class="order-date"><?=date('d.m.Y H:i',strtotime($orderRow['created_at']))?></small></td>
+          <td><?=sh($orderRow['customer_name'])?></td>
+          <td><a href="mailto:<?=sh($orderRow['customer_email'])?>" onclick="event.stopPropagation()" class="order-email"><?=sh($orderRow['customer_email'])?></a></td>
+          <td><?=sh($groupName)?></td>
+          <td class="order-total"><?=salesMoney((int)$orderRow['total_cents'])?></td>
+          <?php foreach(['is_paid'=>'Bezahlt','is_packed'=>'Gepackt','is_issued'=>'Ausgegeben'] as $statusField=>$statusLabel): ?>
+            <td class="order-status-cell"><form method="post" class="order-status-form" onclick="event.stopPropagation()">
+              <input type="hidden" name="csrf_token" value="<?=sh($csrf)?>"><input type="hidden" name="do" value="order_status"><input type="hidden" name="action_id" value="<?=$selected?>"><input type="hidden" name="order_id" value="<?=$orderId?>"><input type="hidden" name="field" value="<?=$statusField?>"><input type="hidden" name="open_order" value="<?=$isOrderOpen?$orderId:0?>">
+              <input type="checkbox" name="value" value="1" <?=$orderRow[$statusField]?'checked':''?> onchange="this.form.submit()" aria-label="<?=$statusLabel?> für <?=sh($orderRow['order_number'])?>">
+            </form></td>
+          <?php endforeach; ?>
+        </tr>
+        <?php if($isOrderOpen): ?>
+          <tr class="order-detail-row"><td colspan="8">
+            <div class="order-detail-panel">
+              <div class="order-detail-heading"><strong>Bestelldetails – <?=sh($orderRow['order_number'])?></strong>
+                <form method="post" class="order-delete-form" onclick="event.stopPropagation()" onsubmit="return confirm('Bestellung endgültig löschen? Sie wird vollständig aus allen Berechnungen entfernt.');">
+                  <input type="hidden" name="csrf_token" value="<?=sh($csrf)?>"><input type="hidden" name="do" value="delete_order"><input type="hidden" name="action_id" value="<?=$selected?>"><input type="hidden" name="order_id" value="<?=$orderId?>"><button type="submit" class="smallbtn" title="Bestellung löschen"><i class="fas fa-trash" aria-hidden="true"></i> Bestellung löschen</button>
+                </form>
+              </div>
+              <?php if($orderLines): ?><div class="order-cart-lines">
+                <?php foreach($orderLines as $lineRow): ?>
+                  <div class="order-cart-line">
+                    <div class="order-cart-product"><strong><?=sh($lineRow['item_name'])?></strong><?php if(trim((string)($lineRow['variant_text']??''))!==''): ?><div class="order-cart-variant"><?=sh($lineRow['variant_text'])?></div><?php endif; ?></div>
+                    <div class="order-cart-calculation"><span><?= (int)$lineRow['quantity'] ?> × <?=salesMoney((int)$lineRow['unit_price_cents'])?></span><strong><?=salesMoney((int)$lineRow['line_total_cents'])?></strong></div>
+                  </div>
+                <?php endforeach; ?>
+              </div><?php else: ?><p class="muted">Zu dieser Bestellung sind keine Positionen hinterlegt.</p><?php endif; ?>
+              <div class="order-cart-grand-total"><span>Gesamtbetrag</span><strong><?=salesMoney((int)$orderRow['total_cents'])?></strong></div>
+            </div>
+          </td></tr>
+        <?php endif; ?>
+      <?php endforeach; ?>
+      </tbody>
+    </table>
+  </div>
+</section>
 <script>
-document.querySelectorAll('.variant-toggle').forEach(button=>button.addEventListener('click',()=>{const expanded=button.getAttribute('aria-expanded')==='true';button.setAttribute('aria-expanded',expanded?'false':'true');document.querySelectorAll('tr[data-parent="'+button.dataset.target+'"]').forEach(row=>row.hidden=expanded)}));
-const search=document.getElementById('orderSearch'),gf=document.getElementById('groupFilter'),sf=document.getElementById('statusFilter');function filterOrders(){document.querySelectorAll('#ordersTable tbody tr').forEach(r=>{let ok=(!search||r.dataset.name.includes(search.value.toLowerCase()))&&(!gf||!gf.value||r.dataset.group===gf.value);if(sf&&sf.value==='unpaid')ok=ok&&r.dataset.paid==='0';if(sf&&sf.value==='unpacked')ok=ok&&r.dataset.packed==='0';if(sf&&sf.value==='unissued')ok=ok&&r.dataset.issued==='0';r.hidden=!ok})} [search,gf,sf].filter(Boolean).forEach(e=>e.addEventListener('input',filterOrders));
+(()=>{
+  const table=document.getElementById('ordersTable');
+  if(!table)return;
+  const search=document.getElementById('orderSearch');
+  const group=document.getElementById('groupFilter');
+  const status=document.getElementById('statusFilter');
+  const summaries=Array.from(table.querySelectorAll('tr.order-summary-row'));
+  function applyOrderFilters(){
+    const needle=(search?.value||'').trim().toLocaleLowerCase('de-DE');
+    const groupValue=group?.value||'';
+    const statusValue=status?.value||'';
+    summaries.forEach(row=>{
+      const matchesText=!needle||(row.dataset.name||'').toLocaleLowerCase('de-DE').includes(needle);
+      const matchesGroup=!groupValue||row.dataset.group===groupValue;
+      const matchesStatus=!statusValue||(statusValue==='unpaid'&&row.dataset.paid!=='1')||(statusValue==='unpacked'&&row.dataset.packed!=='1')||(statusValue==='unissued'&&row.dataset.issued!=='1');
+      const visible=matchesText&&matchesGroup&&matchesStatus;
+      row.hidden=!visible;
+      const detail=row.nextElementSibling?.classList.contains('order-detail-row')?row.nextElementSibling:null;
+      if(detail)detail.hidden=!visible;
+    });
+  }
+  [search,group,status].forEach(control=>control?.addEventListener(control===search?'input':'change',applyOrderFilters));
+})();
 </script>
+<style>
+.parent-orders-card .order-filters{margin:0 0 14px}
+.orders-table{width:100%;min-width:980px;border-collapse:separate;border-spacing:0}
+.orders-table th,.orders-table td{padding:11px 12px;text-align:left;vertical-align:middle;border-bottom:1px solid #e7ecef}
+.orders-table thead th{font-size:.9rem;color:#596772;font-weight:650;white-space:nowrap;background:#f7f9fa}
+.orders-table tbody tr.order-summary-row{cursor:pointer;transition:background .12s ease}
+.orders-table tbody tr.order-summary-row:hover td{background:#f0f5f8}
+.orders-table tbody tr.order-summary-row:focus-visible{outline:2px solid var(--primary,#3977a8);outline-offset:-2px}
+.orders-table tbody tr.order-summary-row.is-open td{background:#eaf2f7;border-bottom-color:#d3e0e8}
+.orders-table .order-date{display:block;margin-top:3px;color:#78858e;font-size:.78rem;white-space:nowrap}
+.orders-table .order-email{color:inherit;text-decoration:none}
+.orders-table .order-email:hover{text-decoration:underline}
+.orders-table .order-total{font-weight:700;white-space:nowrap}
+.orders-table .order-status-cell{text-align:center;width:76px}
+.orders-table .order-status-form{display:flex;justify-content:center;margin:0}
+.orders-table .order-status-form input{width:18px;height:18px;accent-color:var(--primary,#3977a8);cursor:pointer}
+.orders-table .order-detail-row>td{padding:0 12px 14px;background:#eaf2f7;border-bottom:1px solid #d3e0e8}
+.order-detail-panel{padding:14px 16px;background:#fff;border:1px solid #dbe5eb;border-radius:8px;box-shadow:0 1px 3px #00000008}
+.order-detail-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:8px;color:#344854}
+.order-delete-form{margin:0}
+.order-delete-form .smallbtn{font-size:.82rem}
+.order-cart-lines{display:grid;gap:0}
+.order-cart-line{display:flex;align-items:center;justify-content:space-between;gap:18px;padding:11px 0;border-bottom:1px solid #edf0f2}
+.order-cart-product{min-width:0}
+.order-cart-variant{margin-top:3px;color:#687781;font-size:.9rem}
+.order-cart-calculation{display:flex;align-items:center;gap:22px;white-space:nowrap}
+.order-cart-calculation>span{color:#56636c}
+.order-cart-grand-total{display:flex;justify-content:flex-end;align-items:center;gap:26px;padding-top:13px;font-size:1.05rem}
+.order-cart-grand-total strong{font-size:1.15rem}
+.orders-empty{text-align:center!important;padding:24px!important;color:#6c7880}
+@media(max-width:650px){.order-cart-line{align-items:flex-start;flex-direction:column;gap:7px}.order-cart-calculation{width:100%;justify-content:space-between}.order-detail-heading{align-items:flex-start;flex-direction:column}}
+</style>
+
+<style>
+/* Parent- und Child-Zeilen bilden gemeinsam einen dezent umrahmten Block. */
+.finance-table tr.finance-item-row.has-variants{cursor:pointer}
+.finance-table tr.finance-item-row.has-variants:hover td{background:#eaf1f7}
+.finance-table tr.finance-item-row.has-variants:focus-visible{outline:2px solid var(--primary,#3977a8);outline-offset:-2px}
+.finance-table .finance-item-name{font:inherit;font-weight:600;color:inherit}
+.finance-table .variant-toggle-icon{display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;margin-left:8px;padding:0;border:1px solid #cbd8e0;border-radius:6px;background:#fff;color:#52616b;cursor:pointer;vertical-align:middle}
+.finance-table .variant-toggle-icon:hover{background:#edf3f6;color:#243746}
+.finance-table .finance-item-row.is-open .variant-toggle-icon{background:#dce9f1;border-color:#a9c0cf;color:#29485e}
+.finance-table tr.finance-item-row.finance-variant-group.is-open > td{background:#eaf1f6;border-top:1px solid #cbd9e2;border-bottom:0}
+.finance-table tr.finance-item-row.finance-variant-group.is-open > td:first-child{border-left:1px solid #cbd9e2;border-top-left-radius:8px}
+.finance-table tr.finance-item-row.finance-variant-group.is-open > td:last-child{border-right:1px solid #cbd9e2;border-top-right-radius:8px}
+.finance-table tr.variant-detail-row.finance-variant-group > td{background:#f7f9fb;border-top:0;border-bottom:0}
+.finance-table tr.variant-detail-row.finance-variant-group > td:first-child{border-left:1px solid #cbd9e2;padding-left:30px}
+.finance-table tr.variant-detail-row.finance-variant-group > td:last-child{border-right:1px solid #cbd9e2}
+.finance-table tr.variant-detail-row.finance-variant-group.is-last > td{border-bottom:1px solid #cbd9e2}
+.finance-table tr.variant-detail-row.finance-variant-group.is-last > td:first-child{border-bottom-left-radius:8px}
+.finance-table tr.variant-detail-row.finance-variant-group.is-last > td:last-child{border-bottom-right-radius:8px}
+.finance-table tr.finance-item-row.finance-variant-group.is-open:hover > td,
+.finance-table tr.variant-detail-row.finance-variant-group:hover > td{background:#f1f5f8}
+.finance-table .variant-detail-label{display:inline-block;padding-left:28px;font-size:.94em}
+.finance-table .variant-detail-row[hidden]{display:none!important}
+</style>
 <?php require __DIR__.'/_layout_end.php'; ?>

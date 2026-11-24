@@ -1,4 +1,3 @@
-
 <?php
 // Eine Sitzung nur starten, wenn noch keine aktiv ist.
 if (session_status() === PHP_SESSION_NONE) {
@@ -99,4 +98,3 @@ function logout() {
     header('Location: login.php');
     exit;
 }
-?>
