@@ -7,10 +7,10 @@ $navigationItems = require __DIR__ . '/../config/navigation.php';
 $currentPage = basename(parse_url($_SERVER['SCRIPT_NAME'] ?? '', PHP_URL_PATH) ?: '');
 $currentQuery = [];
 parse_str((string) (parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_QUERY) ?: ''), $currentQuery);
-$isNavigationItemActive = static function (array $item) use ($currentPage, $currentQuery): bool {
-    if ($currentPage !== basename((string) ($item['url'] ?? ''))) return false;
+$isNavigationItemActive = static function (array $navigationItem) use ($currentPage, $currentQuery): bool {
+    if ($currentPage !== basename((string) ($navigationItem['url'] ?? ''))) return false;
     $targetQuery = [];
-    parse_str((string) (parse_url((string) ($item['url'] ?? ''), PHP_URL_QUERY) ?: ''), $targetQuery);
+    parse_str((string) (parse_url((string) ($navigationItem['url'] ?? ''), PHP_URL_QUERY) ?: ''), $targetQuery);
     foreach (['view'] as $key) {
         if (($targetQuery[$key] ?? null) !== ($currentQuery[$key] ?? null)) return false;
     }
@@ -55,14 +55,14 @@ $navigationGroups = [
     'Verwaltung' => ['Benutzerverwaltung', 'Rollen & Rechte'],
 ];
 $dashboardItem = null;
-foreach ($visibleItems as $item) {
-    if ($item['label'] === 'Dashboard') $dashboardItem = $item;
+foreach ($visibleItems as $navigationItem) {
+    if ($navigationItem['label'] === 'Dashboard') $dashboardItem = $navigationItem;
 }
 ?>
 <div class="app-navigation" aria-label="Hauptnavigation">
     <div class="app-navigation-top">
         <a class="app-navigation-brand" href="dashboard.php" aria-label="Förderverein intern – Dashboard">
-            <img src="/intern/assets/foerderverein-logo.png" alt="Förderverein Ev. Kindergarten Duisburg-Rumeln e.V.">
+            <img src="/intern/assets/foerderverein-logo.png" width="58" height="52" alt="Förderverein Ev. Kindergarten Duisburg-Rumeln e.V.">
             <span><strong>Förderverein</strong><small>Interner Bereich</small></span>
         </a>
         <button class="app-navigation-toggle" type="button" aria-expanded="false" aria-controls="app-navigation-menu">
@@ -89,19 +89,19 @@ foreach ($visibleItems as $item) {
         <?php endif; ?>
         <?php foreach ($navigationGroups as $groupLabel => $groupItemLabels): ?>
             <?php
-            $items = array_values(array_filter($visibleItems, static fn($item) => in_array($item['label'], $groupItemLabels, true)));
-            if (!$items) continue;
+            $navigationGroupItems = array_values(array_filter($visibleItems, static fn($navigationItem) => in_array($navigationItem['label'], $groupItemLabels, true)));
+            if (!$navigationGroupItems) continue;
             $groupActive = false;
-            foreach ($items as $item) if ($isNavigationItemActive($item)) $groupActive = true;
+            foreach ($navigationGroupItems as $navigationItem) if ($isNavigationItemActive($navigationItem)) $groupActive = true;
             ?>
             <div class="app-navigation-group<?= $groupActive ? ' has-active' : '' ?>">
                 <button class="app-navigation-link app-navigation-group-toggle" type="button" aria-expanded="false">
                     <span><?= htmlspecialchars($groupLabel, ENT_QUOTES, 'UTF-8') ?></span><i class="fas fa-chevron-down app-navigation-chevron" aria-hidden="true"></i>
                 </button>
                 <div class="app-navigation-dropdown">
-                    <?php foreach ($items as $item): $isCurrentPage = $isNavigationItemActive($item); ?>
-                        <a href="<?= htmlspecialchars($item['url'], ENT_QUOTES, 'UTF-8') ?>"<?= $isCurrentPage ? ' class="is-active" aria-current="page"' : '' ?>>
-                            <i class="<?= htmlspecialchars($item['icon'], ENT_QUOTES, 'UTF-8') ?>" aria-hidden="true"></i><span><?= htmlspecialchars($item['label'], ENT_QUOTES, 'UTF-8') ?></span>
+                    <?php foreach ($navigationGroupItems as $navigationItem): $isCurrentPage = $isNavigationItemActive($navigationItem); ?>
+                        <a href="<?= htmlspecialchars($navigationItem['url'], ENT_QUOTES, 'UTF-8') ?>"<?= $isCurrentPage ? ' class="is-active" aria-current="page"' : '' ?>>
+                            <i class="<?= htmlspecialchars($navigationItem['icon'], ENT_QUOTES, 'UTF-8') ?>" aria-hidden="true"></i><span><?= htmlspecialchars($navigationItem['label'], ENT_QUOTES, 'UTF-8') ?></span>
                         </a>
                     <?php endforeach; ?>
                 </div>
