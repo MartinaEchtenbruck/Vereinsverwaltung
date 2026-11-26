@@ -35,6 +35,10 @@ $pushTypes = [
         'label' => 'Mitgliedsjubiläen',
         'description' => 'Erinnerungen sechs und zwei Monate vor einem Mitgliedsjubiläum.',
     ],
+    'new_sales_order' => [
+        'label' => 'Neue Elternbestellungen',
+        'description' => 'Push-Hinweis, wenn eine neue Bestellung über die öffentliche Bestellseite eingeht.',
+    ],
     'user_registered' => [
         'label' => 'Neue Benutzerregistrierungen',
         'description' => 'Push-Hinweis, wenn ein neuer Benutzer einen Registrierungsantrag einreicht.',

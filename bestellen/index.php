@@ -19,6 +19,15 @@ $selected=(int)($_GET['aktion']??$_POST['action_id']??0);
 $action=null;
 if($selected){foreach($actions as $a)if((int)$a['id']===$selected)$action=$a;}
 elseif(count($actions)===1)$action=$actions[0];
+// Zahlungshinweise vor der POST-Verarbeitung laden, damit sie bereits beim
+// Erstellen der Bestellbestätigungs-Mail verfügbar sind.
+$paymentTextQuery=$conn->prepare('SELECT setting_value FROM sales_settings WHERE setting_key=?');
+$paymentTextQuery->execute(['order_confirmation_payment_text']);
+$paymentConfirmationText=$paymentTextQuery->fetchColumn();
+if($paymentConfirmationText===false){
+    $paymentConfirmationText='Bitte bezahle den Betrag entsprechend den Zahlungsinformationen, die dir der Förderverein mitgeteilt hat.';
+}
+
 if($_SERVER['REQUEST_METHOD']==='POST'){
  try{
   if(!hash_equals($csrf,(string)($_POST['csrf_token']??'')))throw new RuntimeException('Sitzung abgelaufen. Bitte lade die Seite neu.');
@@ -50,15 +59,39 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
    $lines[]=['item'=>$it,'qty'=>$qty,'variant_text'=>$variantText,'unit_cents'=>$unit,'line_cents'=>$line];
   }
   if(!$lines)throw new RuntimeException('Bitte wähle mindestens einen Artikel aus.');
-  $conn->beginTransaction();
-  $q=$conn->prepare("INSERT INTO sales_orders(action_id,order_number,customer_name,customer_email,group_id,total_cents,created_at) VALUES(?,?,?,?,?,?,NOW())");
-  $number=''; // Eindeutige, gut lesbare Bestellnummer wird aus ID und Jahr gebildet.
-  $q->execute([$action['id'],'PENDING',$name,$email,$groupId,$total]);$orderId=(int)$conn->lastInsertId();
-  $number='V'.date('y').'-'.str_pad((string)$orderId,5,'0',STR_PAD_LEFT);
-  $conn->prepare('UPDATE sales_orders SET order_number=? WHERE id=?')->execute([$number,$orderId]);
-  $ins=$conn->prepare('INSERT INTO sales_order_items(order_id,item_id,item_name,variant_text,quantity,unit_price_cents,line_total_cents) VALUES(?,?,?,?,?,?,?)');
-  foreach($lines as $line)$ins->execute([$orderId,$line['item']['id'],$line['item']['name'],$line['variant_text'],$line['qty'],$line['unit_cents'],$line['line_cents']]);
-  $conn->commit(); file_put_contents($rateFile,(string)$now,LOCK_EX);
+  // Gemeinsame Sperre verhindert, dass parallele Bestellungen den Nummernstand gleichzeitig zurücksetzen.
+  $numberingLock=(int)$conn->query("SELECT GET_LOCK('sales_orders_numbering',10)")->fetchColumn();
+  if($numberingLock!==1)throw new RuntimeException('Die Bestellnummer konnte gerade nicht reserviert werden. Bitte versuche es erneut.');
+  try {
+   // Nur wenn wirklich keinerlei Bestellung mehr existiert, darf die AUTO_INCREMENT-Folge neu beginnen.
+   $existingOrders=(int)$conn->query('SELECT COUNT(*) FROM sales_orders')->fetchColumn();
+   if($existingOrders===0)$conn->exec('ALTER TABLE sales_orders AUTO_INCREMENT=1');
+   $conn->beginTransaction();
+   $q=$conn->prepare("INSERT INTO sales_orders(action_id,order_number,customer_name,customer_email,group_id,total_cents,created_at) VALUES(?,?,?,?,?,?,NOW())");
+   $number=''; // Eindeutige, gut lesbare Bestellnummer wird aus ID und Jahr gebildet.
+   $q->execute([$action['id'],'PENDING',$name,$email,$groupId,$total]);$orderId=(int)$conn->lastInsertId();
+   $number='V'.date('y').'-'.str_pad((string)$orderId,5,'0',STR_PAD_LEFT);
+   $conn->prepare('UPDATE sales_orders SET order_number=? WHERE id=?')->execute([$number,$orderId]);
+   $ins=$conn->prepare('INSERT INTO sales_order_items(order_id,item_id,item_name,variant_text,quantity,unit_price_cents,line_total_cents) VALUES(?,?,?,?,?,?,?)');
+   foreach($lines as $line)$ins->execute([$orderId,$line['item']['id'],$line['item']['name'],$line['variant_text'],$line['qty'],$line['unit_cents'],$line['line_cents']]);
+   $conn->commit(); file_put_contents($rateFile,(string)$now,LOCK_EX);
+  } finally {
+   $conn->query("SELECT RELEASE_LOCK('sales_orders_numbering')");
+  }
+  // Neue Bestellung an alle aktiven Benutzer mit Verkaufsberechtigung melden.
+  // Fehler bei Benachrichtigung oder Push dürfen die bereits gespeicherte Bestellung nicht beeinträchtigen.
+  try {
+   require_once $appRoot.'/app/Core/Notifications.php';
+   $notificationUsers=fvNotificationRecipients($conn,['Verkauf']);
+   $notificationTitle='Neue Bestellung eingegangen';
+   $notificationMessage='Bestellung '.$number.' von '.$name.' ('.$group['name'].') – '.salesMoney($total).'.';
+   $notificationUrl='verkauf_uebersicht.php?'.http_build_query(['aktion'=>(int)$action['id'],'open_order'=>$orderId]);
+   foreach($notificationUsers as $notificationUserId){
+    fvCreateNotification($conn,$notificationUserId,'new_sales_order','sales_order',$orderId,'new',$notificationTitle,$notificationMessage,$notificationUrl);
+   }
+  } catch(Throwable $notificationError) {
+   error_log('Neue Bestellung: Benachrichtigung konnte nicht erstellt werden (Bestellung '.$number.'): '.$notificationError->getMessage());
+  }
   $mailLines=["Hallo {$name},","","vielen Dank für deine Bestellung zur Verkaufsaktion „{$action['title']}“.","Bestellnummer: {$number}","Gruppe: {$group['name']}","","Deine Bestellung:"];
   foreach($lines as $line)$mailLines[]=$line['item']['name'].($line['variant_text']!==''?' ('.$line['variant_text'].')':'').' – '.$line['qty'].' × '.salesMoney($line['unit_cents']).' = '.salesMoney($line['line_cents']);
   $mailLines[]='';$mailLines[]='Gesamtbetrag: '.salesMoney($total);if($paymentConfirmationText!==''){$mailLines[]='';foreach(preg_split('/\r\n|\r|\n/',$paymentConfirmationText) as $paymentLine)$mailLines[]=$paymentLine;}$mailLines[]='';$mailLines[]='Viele Grüße';$mailLines[]='Förderverein des Ev. Kindergartens Duisburg-Rumeln';
@@ -73,7 +106,7 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
 if(!$action && $selected && $_SERVER['REQUEST_METHOD']!=='POST')$error='Diese Verkaufsaktion ist nicht verfügbar oder der Bestellzeitraum ist beendet.';
 if($action){$q=$conn->prepare("SELECT * FROM sales_items WHERE action_id=? AND sold_to_parents=1 ORDER BY sort_order,id");$q->execute([$action['id']]);$items=$q->fetchAll(PDO::FETCH_ASSOC);$itemOptions=[];foreach($items as $it){$oq=$conn->prepare('SELECT o.id,o.property_name,v.value_text FROM sales_item_options o LEFT JOIN sales_item_option_values v ON v.option_id=o.id WHERE o.item_id=? ORDER BY o.property_no,v.sort_order,v.id');$oq->execute([$it['id']]);foreach($oq->fetchAll(PDO::FETCH_ASSOC) as $r){$oid=(int)$r['id'];if(!isset($itemOptions[$it['id']][$oid]))$itemOptions[$it['id']][$oid]=['name'=>$r['property_name'],'values'=>[]];if($r['value_text']!==null)$itemOptions[$it['id']][$oid]['values'][]=$r['value_text'];}}}
 $groups=$conn->query('SELECT id,name FROM sales_groups WHERE is_active=1 ORDER BY sort_order,id')->fetchAll(PDO::FETCH_ASSOC);
-$paymentTextQuery=$conn->prepare('SELECT setting_value FROM sales_settings WHERE setting_key=?');$paymentTextQuery->execute(['order_confirmation_payment_text']);$paymentConfirmationText=$paymentTextQuery->fetchColumn();if($paymentConfirmationText===false)$paymentConfirmationText='Bitte bezahle den Betrag entsprechend den Zahlungsinformationen, die dir der Förderverein mitgeteilt hat.';
+
 function esc($v){return htmlspecialchars((string)$v,ENT_QUOTES,'UTF-8');}
 ?><!doctype html><html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title><?= $action ? esc($action['title']) : 'Bestellen – Förderverein' ?></title><link rel="stylesheet" href="<?=esc($assetPrefix)?>styles.css"><style>
 body{padding:16px}.public-wrap{max-width:850px;margin:20px auto;background:white;padding:clamp(18px,4vw,36px);border-radius:12px;box-shadow:0 3px 18px #0001}.muted{color:#65717b}.field{display:grid;gap:6px;margin:14px 0}.field input,.field select{width:100%;padding:11px;border:1px solid #ccd3d8;border-radius:6px;font:inherit}.product-list{display:grid;gap:14px}.product{border:1px solid #e1e6ea;border-radius:9px;padding:15px;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;align-items:start}.product-info{grid-column:1/-1}.product-info p{margin:5px 0}.price{font-weight:600}.variant-group{border:0;padding:0;margin:0;min-width:0}.variant-group legend{font-weight:600;margin-bottom:7px}.variant-choices{display:flex;gap:7px;flex-wrap:wrap}.variant-choice input{position:absolute;opacity:0;pointer-events:none}.variant-choice span{display:inline-block;border:1px solid #cbd3d9;border-radius:7px;padding:8px 12px;cursor:pointer;background:#fff}.variant-choice input:checked+span{border-color:#2679a8;background:#e8f3f9;box-shadow:inset 0 0 0 1px #2679a8}.variant-choice input:focus-visible+span{outline:2px solid #2679a8;outline-offset:2px}.quantity{display:flex;align-items:center;gap:8px;justify-self:end}.quantity input{width:76px;padding:8px;border:1px solid #ccd3d8;border-radius:6px}.line-total{font-weight:600;text-align:right;align-self:center}.total{font-size:1.25rem;font-weight:700;text-align:right;margin:20px 0}.alert{padding:14px;border-radius:7px;margin:14px 0;background:#e9f7ed}.alert.error{background:#fff0ee}.submit{padding:12px 22px;background:#2679a8;color:white;border:0;border-radius:7px;font-size:1rem;cursor:pointer}.hp{position:absolute;left:-10000px;width:1px;height:1px;overflow:hidden}@media(max-width:600px){.product{grid-template-columns:1fr auto;padding:12px}.variant-group{grid-column:1/-1}.quantity{grid-column:1}.line-total{grid-column:2;grid-row:3}}

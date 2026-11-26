@@ -49,9 +49,16 @@ try{
   }
   if($act==='order_status'){
    $field=(string)($_POST['field']??'');if(!in_array($field,['is_paid','is_packed','is_issued'],true))throw new RuntimeException('Ungültiger Status.');
-   $conn->prepare("UPDATE sales_orders SET {$field}=? WHERE id=? AND action_id=?")->execute([isset($_POST['value'])?1:0,(int)$_POST['order_id'],$aid]);goSales('Bestellstatus aktualisiert.');
+   $conn->prepare("UPDATE sales_orders SET {$field}=? WHERE id=? AND action_id=? AND is_cancelled=0")->execute([isset($_POST['value'])?1:0,(int)$_POST['order_id'],$aid]);goSales('Bestellstatus aktualisiert.');
   }
-  if($act==='delete_order'){$conn->prepare('DELETE FROM sales_orders WHERE id=? AND action_id=?')->execute([(int)$_POST['order_id'],$aid]);goSales('Bestellung wurde gelöscht und aus allen Berechnungen entfernt.');}
+  if($act==='cancel_order'){
+   $conn->prepare('UPDATE sales_orders SET is_cancelled=1,cancelled_at=NOW(),cancelled_by=? WHERE id=? AND action_id=? AND is_cancelled=0')->execute([(int)$_SESSION['user_id'],(int)$_POST['order_id'],$aid]);
+   goSales('Bestellung wurde storniert. Sie bleibt zur Dokumentation erhalten und wird nicht mehr mitgerechnet.');
+  }
+  if($act==='restore_order'){
+   $conn->prepare('UPDATE sales_orders SET is_cancelled=0,cancelled_at=NULL,cancelled_by=NULL WHERE id=? AND action_id=? AND is_cancelled=1')->execute([(int)$_POST['order_id'],$aid]);
+   goSales('Stornierung wurde aufgehoben. Die Bestellung wird wieder mitgerechnet.');
+  }
   if($act==='save_group'){$name=trim((string)$_POST['group_name']);$gid=(int)($_POST['group_id']??0);if($name==='')throw new RuntimeException('Gruppenname darf nicht leer sein.');if($gid)$conn->prepare('UPDATE sales_groups SET name=? WHERE id=?')->execute([$name,$gid]);else{$conn->prepare('INSERT INTO sales_groups(name,sort_order) VALUES(?,?)')->execute([$name,(int)$_POST['sort_order']]);}goSales('Gruppe gespeichert.');}
   if($act==='save_general_settings'){$paymentText=trim((string)($_POST['order_confirmation_payment_text']??''));if(mb_strlen($paymentText)>5000)throw new RuntimeException('Der Zahlungshinweis darf höchstens 5.000 Zeichen lang sein.');$conn->prepare('INSERT INTO sales_settings(setting_key,setting_value) VALUES(?,?) ON DUPLICATE KEY UPDATE setting_value=VALUES(setting_value)')->execute(['order_confirmation_payment_text',$paymentText]);goSales('Allgemeine Einstellungen wurden gespeichert.',false);}
   if($act==='complete_action'){
@@ -93,6 +100,7 @@ if($action){
    FROM sales_order_items soi
    JOIN sales_orders so ON so.id=soi.order_id
    WHERE so.action_id=?
+     AND so.is_cancelled=0
      AND soi.quantity>0
      AND TRIM(COALESCE(soi.variant_text,''))<>''
    GROUP BY soi.item_id, TRIM(soi.variant_text)
@@ -108,8 +116,8 @@ if($action){
     'quantity'=>$quantity
    ];
   }
-  foreach($items as $it){$parentQty=0;foreach($orders as $o){$q=$conn->prepare('SELECT COALESCE(SUM(quantity),0) FROM sales_order_items WHERE order_id=? AND item_id=?');$q->execute([$o['id'],$it['id']]);$parentQty+=(int)$q->fetchColumn();}$all=$parentQty+($internal[$it['id']]??0);$stats['qty']+=$all;$stats['purchase']+=$all*(int)$it['purchase_price_cents'];}
-  foreach($orders as $o){$stats['revenue']+=(int)$o['total_cents'];if($o['is_paid'])$stats['paid']+=(int)$o['total_cents'];}
+  foreach($items as $it){$parentQty=0;foreach($orders as $o){if(!empty($o['is_cancelled']))continue;$q=$conn->prepare('SELECT COALESCE(SUM(quantity),0) FROM sales_order_items WHERE order_id=? AND item_id=?');$q->execute([$o['id'],$it['id']]);$parentQty+=(int)$q->fetchColumn();}$all=$parentQty+($internal[$it['id']]??0);$stats['qty']+=$all;$stats['purchase']+=$all*(int)$it['purchase_price_cents'];}
+  foreach($orders as $o){if(!empty($o['is_cancelled']))continue;$stats['revenue']+=(int)$o['total_cents'];if($o['is_paid'])$stats['paid']+=(int)$o['total_cents'];}
   $stats['cost_with_shipping']=$stats['purchase'];$stats['surplus']=$stats['revenue']-$stats['purchase'];
  }
 }
